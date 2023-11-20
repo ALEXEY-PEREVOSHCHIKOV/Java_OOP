@@ -49,12 +49,6 @@ public interface BotTestInterface {
     void testAddBookCommandWithInvalidYear();
 
     /**
-     * Проверка случая, когда ввод неполный
-     */
-    @Test
-    void testAddBookCommandWithIncompleteInput();
-
-    /**
      * Проверка команды /getread для вывода полного списка прочитанных книг при пустом списке
      */
     @Test
@@ -108,21 +102,27 @@ public interface BotTestInterface {
     @Test
     void testRemoveBookCommandWithInvalidFormat();
 
+
     /**
      * Проверка команды /editbook для случая, когда выполняется успешное редактирование книги с правильными данными
      */
+
     @Test
     void testEditBookCommandWithValidData();
+
+
 
     /**
      * Проверка команды /editbook для случая, когда указанный номер книги недопустим (например, больше размера списка)
      */
+
     @Test
     void testEditBookCommandWithInvalidBookNumber();
 
     /**
      * Проверка команды /editbook для случая, когда данные книги введены в неверном формате.
      */
+
     @Test
     void testEditBookCommandWithInvalidDataFormat();
 
@@ -192,4 +192,5 @@ public interface BotTestInterface {
     @Test
     void stopPuzzleCommandTest();
 }
+
 
