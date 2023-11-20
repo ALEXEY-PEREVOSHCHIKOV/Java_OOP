@@ -1,6 +1,13 @@
 package org.example;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
+enum BookInputStep {
+    TITLE,
+    AUTHOR,
+    YEAR
+}
 
 /**
  * Класс для обработки сообщений пользователя
@@ -13,6 +20,13 @@ public class MessageHandling implements MessageHandlingInterface {
 
     private boolean puzzleMode;
 
+    private boolean bookMode;
+
+    // Добавлены поля для отслеживания состояния добавления книги
+    private Map<Long, BookInputStep> bookInputSteps;
+
+    private Map<Long, String> bookData; // Собранные данные о книге
+
 
     /**
      * Конструктор класса MessageHandling. Инициализирует объекты Storage и PuzzleGame,
@@ -22,6 +36,9 @@ public class MessageHandling implements MessageHandlingInterface {
         storage = new Storage();
         puzzleGame = new PuzzleGame();
         puzzleMode = false;
+        bookMode = false;
+        bookInputSteps = new HashMap<>();
+        bookData = new HashMap<>();
     }
 
     /**
@@ -37,9 +54,10 @@ public class MessageHandling implements MessageHandlingInterface {
 
         if (puzzleMode) {
             response = handlePuzzleMode(textMsg, chatId);
-        }else{
+        }else if (bookMode){
+            response = handleBookMode(textMsg, chatId);
+        }else
             response = handleDefaultMode(textMsg, chatId);
-        }
 
         return response;
     }
@@ -99,29 +117,11 @@ public class MessageHandling implements MessageHandlingInterface {
 
 
         } else if (textMsg.startsWith("/addbook")) {
-            // Получаем название книги, автора и год прочтения, введенные пользователем
-            String[] parts = textMsg.substring(9).split("\n");
-            if (parts.length == 3) {
-                String title = parts[0].trim();
-                String author = parts[1].trim();
-                int year;
-                try {
-                    year = Integer.parseInt(parts[2].trim());
-
-                    // Проверяем существование книги в базе данных
-                    if (!storage.bookExists(title, author, year, chatId)) {
-                        // Если книги с такими данными нет, добавляем книгу в базу данных
-                        storage.addReadBook(title, author, year, chatId);
-                        response = "Книга '" + title + "' от автора " + author + " (год: " + year + ") успешно добавлена в список прочитанных!";
-                    } else {
-                        response = "Книга с указанным названием, автором и годом прочтения уже существует в базе данных.";
-                    }
-                } catch (NumberFormatException e) {
-                    response = "Некорректный формат года прочтения.";
-                }
-            } else {
-                response = "Некорректный формат ввода. Используйте /addbook Название книги\nАвтор\nГод прочтения";
-            }
+            // Переходим к обработке добавления книги
+            bookMode = true;
+            bookInputSteps.put(chatId, BookInputStep.TITLE);
+            bookData.put(chatId, ""); // Инициализируем пустой строкой
+            response = "Введите название книги:";
 
 
         } else if (textMsg.startsWith("/editbook")) {
@@ -234,5 +234,63 @@ public class MessageHandling implements MessageHandlingInterface {
     }
 
 
+    // Обновленный метод для обработки добавления книги
+    private String handleBookMode(String textMsg, long chatId) {
+        String response;
+
+        // Проверяем текущий шаг ввода для данного чата
+        BookInputStep currentStep = bookInputSteps.getOrDefault(chatId, BookInputStep.TITLE);
+
+        // Если пользователь отправляет произвольное сообщение, предполагаем, что это название книги
+        if (currentStep == BookInputStep.TITLE) {
+            bookData.put(chatId, textMsg.trim()); // Сохраняем название книги
+            bookInputSteps.put(chatId, BookInputStep.AUTHOR); // Переходим к следующему шагу
+            response = "Теперь введите автора книги:";
+        } else {
+            // Иначе обрабатываем ввод в соответствии с текущим шагом
+            switch (currentStep) {
+                case AUTHOR:
+                    bookData.put(chatId, bookData.get(chatId) + "\n" + textMsg.trim()); // Сохраняем автора книги
+                    bookInputSteps.put(chatId, BookInputStep.YEAR); // Переходим к следующему шагу
+                    response = "Теперь введите год прочтения книги:";
+                    break;
+                case YEAR:
+                    try {
+                        int year = Integer.parseInt(textMsg.trim());
+                        bookData.put(chatId, bookData.get(chatId) + "\n" + year); // Сохраняем год прочтения книги
+
+                        // Проверяем существование книги в базе данных
+                        String[] parts = bookData.get(chatId).split("\n");
+                        String title = parts[0].trim();
+                        String author = parts[1].trim();
+
+                        if (!storage.bookExists(title, author, year, chatId)) {
+                            // Если книги с такими данными нет, добавляем книгу в базу данных
+                            storage.addReadBook(title, author, year, chatId);
+                            bookMode = false;
+                            response = "Книга '" + title + "' от автора " + author + " (год: " + year + ") успешно добавлена в список прочитанных!";
+                        } else {
+                            bookMode = false;
+                            response = "Книга с указанным названием, автором и годом прочтения уже существует в базе данных.";
+                        }
+
+                        // Сбрасываем состояние добавления книги для данного чата
+                        bookInputSteps.remove(chatId);
+                        bookData.remove(chatId);
+
+                    } catch (NumberFormatException e) {
+                        response = "Некорректный формат года прочтения. Пожалуйста, введите год цифрами.";
+                    }
+                    break;
+                default:
+                    response = "Неизвестная ошибка в процессе добавления книги.";
+            }
+        }
+
+        return response;
+    }
+
 }
+
+
 
