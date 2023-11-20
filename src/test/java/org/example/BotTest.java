@@ -263,7 +263,7 @@ public class BotTest implements BotTestInterface{
         messageHandling.parseMessage("/removebook",ChatId);
         String response = messageHandling.parseMessage(message,ChatId);
         verify(storage, never()).updateReadBooks(eq(ChatId), any(ArrayList.class));
-        Assert.assertEquals("Указанный номер книги не существует.", response);
+        Assert.assertEquals("Указанный уникальный номер книги не существует в списке прочитанных книг.", response);
     }
 
 
@@ -279,34 +279,38 @@ public class BotTest implements BotTestInterface{
         Assert.assertEquals("Некорректный формат номера книги.", response);
     }
 
-    /*
+
     /**
      * Проверка команды /editbook для случая, когда выполняется успешное редактирование книги с правильными данными
      */
-    /*
     @Test
     public void testEditBookCommandWithValidData() {
-        String message = "1\nNew Book\nNew Author\n2023";
         ArrayList<String> readBooks = new ArrayList<>();
         readBooks.add("Old Book\nOld Author\n2022");
         when(storage.getAllValues(ChatId)).thenReturn(readBooks);
-        String response = messageHandling.parseMessage("/editbook " + message, ChatId);
+        messageHandling.parseMessage("/editbook", ChatId);
+        messageHandling.parseMessage("1", ChatId);
+        messageHandling.parseMessage("New Book", ChatId);
+        messageHandling.parseMessage("New Author", ChatId);
+        String response = messageHandling.parseMessage("2023", ChatId);
         verify(storage, times(1)).editReadBook(eq("Old Book"), eq("Old Author"), eq(2022), eq("New Book"), eq("New Author"), eq(2023), eq(ChatId));
-        Assert.assertEquals("Книга 'Old Book' успешно заменена на книгу 'New Book' от автора New Author (год: 2023) в списке прочитанных!", response);
+        Assert.assertEquals("Книга 'Old Book' успешно отредактирована в списке прочитанных!", response);
     }
 
 
     /**
      * Проверка команды /editbook для случая, когда указанный номер книги недопустим (например, больше размера списка)
      */
-    /*
     @Test
     public void testEditBookCommandWithInvalidBookNumber() {
-        String message = "3\nNew Book\nNew Author\n2023";
         ArrayList<String> readBooks = new ArrayList<>();
         readBooks.add("Old Book\nOld Author\n2022");
         when(storage.getAllValues(ChatId)).thenReturn(readBooks);
-        String response = messageHandling.parseMessage("/editbook " + message, ChatId);
+        messageHandling.parseMessage("/editbook", ChatId);
+        messageHandling.parseMessage("3", ChatId);
+        messageHandling.parseMessage("New Book", ChatId);
+        messageHandling.parseMessage("New Author", ChatId);
+        String response = messageHandling.parseMessage("2023", ChatId);
         verify(storage, never()).editReadBook(anyString(), anyString(), anyInt(), anyString(), anyString(), anyInt(), eq(ChatId));
         Assert.assertEquals("Указанный уникальный номер книги не существует в списке прочитанных книг.", response);
     }
@@ -315,15 +319,14 @@ public class BotTest implements BotTestInterface{
     /**
      * Проверка команды /editbook для случая, когда данные книги введены в неверном формате.
      */
-    /*
     @Test
     public void testEditBookCommandWithInvalidDataFormat() {
         String message = "InvalidData";
-        String response = messageHandling.parseMessage("/editbook " + message, ChatId);
+        messageHandling.parseMessage("/editbook", ChatId);
+        String response = messageHandling.parseMessage( message, ChatId);
         verify(storage, never()).editReadBook(anyString(), anyString(), anyInt(), anyString(), anyString(), anyInt(), eq(ChatId));
-        Assert.assertEquals("Некорректный формат ввода. Используйте /editbook Уникальный_номер\n Новое_название\nНовый_автор\nНовый_год", response);
+        Assert.assertEquals("Некорректный формат номера книги.", response);
     }
-    */
 
 
     /**
