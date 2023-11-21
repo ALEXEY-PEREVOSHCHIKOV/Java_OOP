@@ -507,6 +507,3 @@ public class MessageHandling implements MessageHandlingInterface {
         return response;
     }
 }
-
-
-
