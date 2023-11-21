@@ -5,14 +5,18 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Mock;
-
-import java.util.ArrayList;
-
+import java.util.*;
 import static org.mockito.Mockito.*;
 
-public class BotTest {
+public class BotTest implements BotTestInterface{
+
     private long ChatId;
+
     private  MessageHandling bot ;
+
+    private PuzzleGame puzzleGame;
+
+    private Map<String, Puzzle>  puzzles;
 
     @Mock
     private Storage storage;
@@ -25,6 +29,8 @@ public class BotTest {
         ChatId = 12345L;
         bot = new MessageHandling();
         MockitoAnnotations.initMocks(this);
+        puzzles = new HashMap<>();
+        puzzleGame = new PuzzleGame();
     }
 
     /**
@@ -86,10 +92,18 @@ public class BotTest {
      */
     @Test
     public void testAddBookCommandWithValidInput() {
-        String textMsg = "/addbook\nSample Book\nJohn Doe\n2023";
+        String textMsg = "/addbook";
         when(storage.bookExists(anyString(), anyString(), anyInt(), anyLong())).thenReturn(false);
         String response = messageHandling.parseMessage(textMsg, ChatId);
-        verify(storage, times(1)).addReadBook("Sample Book", "John Doe", 2023, ChatId);
+        Assert.assertEquals("Введите название книги:", response);
+        textMsg = "Sample Book";
+        response = messageHandling.parseMessage(textMsg, ChatId);
+        Assert.assertEquals("Теперь введите автора книги:", response);
+        textMsg = "John Doe";
+        response = messageHandling.parseMessage(textMsg, ChatId);
+        Assert.assertEquals("Теперь введите год прочтения книги:", response);
+        textMsg = "2023";
+        response = messageHandling.parseMessage(textMsg, ChatId);
         Assert.assertEquals("Книга 'Sample Book' от автора John Doe (год: 2023) успешно добавлена в список прочитанных!", response);
     }
 
@@ -98,9 +112,14 @@ public class BotTest {
      */
     @Test
     public void testAddBookCommandWithExistingBook() {
-        String textMsg = "/addbook\nSample Book\nJohn Doe\n2023";
+        String textMsg = "/addbook";
         when(storage.bookExists(anyString(), anyString(), anyInt(), anyLong())).thenReturn(true);
         messageHandling.parseMessage(textMsg, ChatId);
+        textMsg = "Sample Book";
+        messageHandling.parseMessage(textMsg, ChatId);
+        textMsg = "John Doe";
+        messageHandling.parseMessage(textMsg, ChatId);
+        textMsg = "2023";
         String response = messageHandling.parseMessage(textMsg, ChatId);
         verify(storage, never()).addReadBook(anyString(), anyString(), anyInt(), anyLong());
         Assert.assertEquals("Книга с указанным названием, автором и годом прочтения уже существует в базе данных.", response);
@@ -112,22 +131,16 @@ public class BotTest {
      */
     @Test
     public void testAddBookCommandWithInvalidYear() {
-        String textMsg = "/addbook\nSample Book\nJohn Doe\nInvalidYear";
+        String textMsg = "/addbook";
+        messageHandling.parseMessage(textMsg, ChatId);
+        textMsg = "Sample Book";
+        messageHandling.parseMessage(textMsg, ChatId);
+        textMsg = "John Doe";
+        messageHandling.parseMessage(textMsg, ChatId);
+        textMsg = "НЕ ГОД";
         String response = messageHandling.parseMessage(textMsg, ChatId);
         verify(storage, never()).addReadBook(anyString(), anyString(), anyInt(), anyLong());
-        Assert.assertEquals("Некорректный формат года прочтения.", response);
-    }
-
-
-    /**
-     * Проверка случая, когда ввод неполный
-     */
-    @Test
-    public void testAddBookCommandWithIncompleteInput() {
-        String textMsg = "/addbook\nSample Book\nJohn Doe";
-        String response = messageHandling.parseMessage(textMsg, ChatId);
-        verify(storage, never()).addReadBook(anyString(), anyString(), anyInt(), anyLong());
-        Assert.assertEquals("Некорректный формат ввода. Используйте /addbook Название книги\nАвтор\nГод прочтения", response);
+        Assert.assertEquals("Некорректный формат года прочтения. Пожалуйста, введите год цифрами.", response);
     }
 
 
@@ -169,24 +182,25 @@ public class BotTest {
         books.add("Book 1");
         books.add("Book 2");
         when(storage.getBooksByAuthor(author, ChatId)).thenReturn(books);
-        String response = messageHandling.parseMessage("/getbyauthor " + author,ChatId);
+        messageHandling.parseMessage("/getbyauthor",ChatId);
+        String response = messageHandling.parseMessage(author,ChatId);
         verify(storage, times(1)).getBooksByAuthor(author, ChatId);
-        Assert.assertEquals("Книги автора John Doe:\nBook 1\nBook 2", response);
+        Assert.assertEquals("Книги автора John Doe:\n" + "\"Book 1\";\n" + "\"Book 2\";\n", response);
     }
 
 
     /**
-     * Проверка команды /getbyauthor для получения списка прочитанных книг указанного автора для случая, когда авор указан неверно
+     * Проверка команды /getbyauthor для получения списка прочитанных книг указанного автора для случая, когда автор указан неверно
      */
     @Test
     public void testGetBooksByAuthorCommandWithNoBooks() {
         String author = "Nonexistent Author";
         when(storage.getBooksByAuthor(author, ChatId)).thenReturn(new ArrayList<>());
-        String response = messageHandling.parseMessage("/getbyauthor " + author,ChatId);
+        messageHandling.parseMessage("/getbyauthor",ChatId);
+        String response = messageHandling.parseMessage(author,ChatId);
         verify(storage, times(1)).getBooksByAuthor(author, ChatId);
         Assert.assertEquals("Нет прочитанных книг этого автора.", response);
     }
-
 
 
     /**
@@ -196,7 +210,8 @@ public class BotTest {
     public void testGetBooksByYearCommandWithNoBooks() {
         int year = 1112;
         when(storage.getBooksByYear(year, ChatId)).thenReturn(new ArrayList<>());
-        String response = messageHandling.parseMessage("/getbyyear " + year,ChatId);
+        messageHandling.parseMessage("/getbyyear",ChatId);
+        String response = messageHandling.parseMessage(String.valueOf(year),ChatId);
         verify(storage, times(1)).getBooksByYear(year, ChatId);
         Assert.assertEquals("Нет прочитанных книг в этом году.", response);
     }
@@ -211,9 +226,10 @@ public class BotTest {
         books.add("Book 1");
         books.add("Book 2");
         when(storage.getBooksByYear(year, ChatId)).thenReturn(books);
-        String response = messageHandling.parseMessage("/getbyyear " + year,ChatId);
+        messageHandling.parseMessage("/getbyyear",ChatId);
+        String response = messageHandling.parseMessage(String.valueOf(year),ChatId);
         verify(storage, times(1)).getBooksByYear(year, ChatId);
-        Assert.assertEquals("Книги 2020 года:\nBook 1\nBook 2", response);
+        Assert.assertEquals("Книги 2020 года:\n" + "\"Book 1\";\n" + "\"Book 2\";\n", response);
     }
 
 
@@ -227,7 +243,8 @@ public class BotTest {
         readBooks.add("Book 1");
         readBooks.add("Book 2");
         when(storage.getReadBooks(ChatId)).thenReturn(readBooks);
-        String response = messageHandling.parseMessage("/removebook " + message, ChatId);
+        messageHandling.parseMessage("/removebook",ChatId);
+        String response = messageHandling.parseMessage(message,ChatId);
         verify(storage, times(1)).updateReadBooks(eq(ChatId), any(ArrayList.class));
         Assert.assertEquals("Книга Book 1 успешно удалена из списка прочитанных!", response);
     }
@@ -243,9 +260,10 @@ public class BotTest {
         readBooks.add("Book 1");
         readBooks.add("Book 2");
         when(storage.getReadBooks(ChatId)).thenReturn(readBooks);
-        String response = messageHandling.parseMessage("/removebook " + message, ChatId);
+        messageHandling.parseMessage("/removebook",ChatId);
+        String response = messageHandling.parseMessage(message,ChatId);
         verify(storage, never()).updateReadBooks(eq(ChatId), any(ArrayList.class));
-        Assert.assertEquals("Указанный номер книги не существует.", response);
+        Assert.assertEquals("Указанный уникальный номер книги не существует в списке прочитанных книг.", response);
     }
 
 
@@ -255,9 +273,10 @@ public class BotTest {
     @Test
     public void testRemoveBookCommandWithInvalidFormat() {
         String message = "InvalidNumber";
-        String response = messageHandling.parseMessage("/removebook " + message, ChatId);
+        messageHandling.parseMessage("/removebook",ChatId);
+        String response = messageHandling.parseMessage(message,ChatId);
         verify(storage, never()).updateReadBooks(eq(ChatId), any(ArrayList.class));
-        Assert.assertEquals("Некорректный формат номера книги", response);
+        Assert.assertEquals("Некорректный формат номера книги.", response);
     }
 
 
@@ -266,13 +285,16 @@ public class BotTest {
      */
     @Test
     public void testEditBookCommandWithValidData() {
-        String message = "1\nNew Book\nNew Author\n2023";
         ArrayList<String> readBooks = new ArrayList<>();
         readBooks.add("Old Book\nOld Author\n2022");
         when(storage.getAllValues(ChatId)).thenReturn(readBooks);
-        String response = messageHandling.parseMessage("/editbook " + message, ChatId);
+        messageHandling.parseMessage("/editbook", ChatId);
+        messageHandling.parseMessage("1", ChatId);
+        messageHandling.parseMessage("New Book", ChatId);
+        messageHandling.parseMessage("New Author", ChatId);
+        String response = messageHandling.parseMessage("2023", ChatId);
         verify(storage, times(1)).editReadBook(eq("Old Book"), eq("Old Author"), eq(2022), eq("New Book"), eq("New Author"), eq(2023), eq(ChatId));
-        Assert.assertEquals("Книга 'Old Book' успешно заменена на книгу 'New Book' от автора New Author (год: 2023) в списке прочитанных!", response);
+        Assert.assertEquals("Книга 'Old Book' успешно отредактирована в списке прочитанных!", response);
     }
 
 
@@ -281,11 +303,14 @@ public class BotTest {
      */
     @Test
     public void testEditBookCommandWithInvalidBookNumber() {
-        String message = "3\nNew Book\nNew Author\n2023";
         ArrayList<String> readBooks = new ArrayList<>();
         readBooks.add("Old Book\nOld Author\n2022");
         when(storage.getAllValues(ChatId)).thenReturn(readBooks);
-        String response = messageHandling.parseMessage("/editbook " + message, ChatId);
+        messageHandling.parseMessage("/editbook", ChatId);
+        messageHandling.parseMessage("3", ChatId);
+        messageHandling.parseMessage("New Book", ChatId);
+        messageHandling.parseMessage("New Author", ChatId);
+        String response = messageHandling.parseMessage("2023", ChatId);
         verify(storage, never()).editReadBook(anyString(), anyString(), anyInt(), anyString(), anyString(), anyInt(), eq(ChatId));
         Assert.assertEquals("Указанный уникальный номер книги не существует в списке прочитанных книг.", response);
     }
@@ -297,9 +322,10 @@ public class BotTest {
     @Test
     public void testEditBookCommandWithInvalidDataFormat() {
         String message = "InvalidData";
-        String response = messageHandling.parseMessage("/editbook " + message, ChatId);
+        messageHandling.parseMessage("/editbook", ChatId);
+        String response = messageHandling.parseMessage( message, ChatId);
         verify(storage, never()).editReadBook(anyString(), anyString(), anyInt(), anyString(), anyString(), anyInt(), eq(ChatId));
-        Assert.assertEquals("Некорректный формат ввода. Используйте /editbook Уникальный_номер\n Новое_название\nНовый_автор\nНовый_год", response);
+        Assert.assertEquals("Некорректный формат номера книги.", response);
     }
 
 
@@ -312,22 +338,36 @@ public class BotTest {
         Assert.assertTrue(response.startsWith("Цитата:"));
     }
 
+
     /**
-     * Проверяет команду начала игры в загадки.
+     * Проверяет команду /playpuzzle - начала игры в загадки.
      */
     @Test
     public void playPuzzleCommandTest() {
-        String response = bot.parseMessage("/playpuzzle", ChatId);
+        String response = bot.parseMessage("/playpuzzle", ChatId); // запуск режима загадок
         Assert.assertTrue(response.startsWith("Добро пожаловать в игру в загадки! Начнем."));
     }
 
+
     /**
-     * Проверяет команду получения подсказки в игре в загадки.
+     * Проверяет, что произвольная загадка, вызываемая в сообщении командой начала игры в загадки
+     * содержится в списке всех загадок
+     */
+    @Test
+        public void testPlayPuzzleContainsRandomPuzzle() {
+            puzzles = puzzleGame.getPuzzles();
+            String response = bot.parseMessage("/playpuzzle",ChatId);
+            String puzzleQuestion = response.replace("Добро пожаловать в игру в загадки! Начнем.\nЗагадка: ", "");
+            Assert.assertTrue(puzzles.containsKey(puzzleQuestion));
+        }
+
+    /**
+     * Проверяет команду /gethint - получения подсказки в игре в загадки.
      */
     @Test
     public void getHintCommandTest() {
-        bot.parseMessage("/playpuzzle", ChatId);
-        String response = bot.parseMessage("/gethint", ChatId);
+        bot.parseMessage("/playpuzzle", ChatId); // запуск режима загадок
+        String response = bot.parseMessage("/gethint", ChatId); //получение подсказки к текущей загадке
         Assert.assertTrue(response.startsWith("Подсказка:"));
     }
 
@@ -341,8 +381,22 @@ public class BotTest {
         Assert.assertTrue(response.startsWith("Следующая загадка:"));
     }
 
+
     /**
-     * Проверяет команду перезапуска игры в загадки.
+     * Тестирует команду /anotheriddle для проверки, что произвольная загадка, вызываемая в сообщении командой следующая загадка в игре в загадки
+     * содержится в списке всех загадок
+     */
+    @Test
+    public void testAnotheRiddleContainsRandomPuzzle() {
+        puzzles = puzzleGame.getPuzzles();
+        bot.parseMessage("/playpuzzle", ChatId);
+        String response = bot.parseMessage("/anotheriddle",ChatId);
+        String puzzleQuestion = response.replace("Следующая загадка: ", "");
+        Assert.assertTrue(puzzles.containsKey(puzzleQuestion));
+    }
+
+    /**
+     * Проверяет команду /restart - перезапуска игры в загадки.
      */
     @Test
     public void restartCommandTest() {
@@ -351,8 +405,23 @@ public class BotTest {
         Assert.assertTrue(response.startsWith("Игра в загадки начата заново."));
     }
 
+
     /**
-     * Проверяет команду получения ответа на текущую загадку в игре.
+     * Проверяет, что произвольная загадка, вызываемая в сообщении командой перезапуска игры в загадки
+     * содержится в списке всех загадок
+     */
+    @Test
+    public void testRestartContainsRandomPuzzle() {
+        puzzles = puzzleGame.getPuzzles();
+        bot.parseMessage("/playpuzzle", ChatId);
+        String response = bot.parseMessage("/restart", ChatId);
+        String puzzleQuestion = response.replace("Игра в загадки начата заново.\n"+"Добро пожаловать в игру в загадки! Начнем.\nЗагадка: ", "");
+        Assert.assertTrue(puzzles.containsKey(puzzleQuestion));
+    }
+
+
+    /**
+     * Проверяет команду /getanswer получения ответа на текущую загадку в игре.
      */
     @Test
     public void getAnswerCommandTest() {
@@ -366,6 +435,7 @@ public class BotTest {
      */
     @Test
     public void stopPuzzleCommandTest() {
-        bot.parseMessage("/playpuzzle", ChatId);    String response = bot.parseMessage("/stoppuzzle", ChatId);
+        bot.parseMessage("/playpuzzle", ChatId);
+        String response = bot.parseMessage("/stoppuzzle", ChatId);
         Assert.assertEquals("Режим головоломки завершен.\nПравильных ответов: 0\n" + "Неправильных ответов: 20\n" + "Процент правильных ответов: 0.0%", response);}
 }

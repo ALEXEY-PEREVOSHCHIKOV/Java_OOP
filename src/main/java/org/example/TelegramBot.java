@@ -7,24 +7,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
-
 import java.util.ArrayList;
 import java.util.List;
-
-
-/**
- * Интерфейс для Телеграмм-бота.
- */
-interface TelegramBotInterface {
-
-
-    /**
-     * Создание клавиатуры в боте.
-     *
-     * @return Объект ReplyKeyboardMarkup с настроенной клавиатурой.
-     */
-    ReplyKeyboardMarkup createKeyboard();
-}
 
 
 /**
@@ -57,7 +41,6 @@ public class TelegramBot extends TelegramLongPollingBot implements TelegramBotIn
     public TelegramBot() {
         messageHandling = new MessageHandling();
     }
-
 
     @Override
     public String getBotUsername() {

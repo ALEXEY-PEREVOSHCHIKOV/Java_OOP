@@ -5,7 +5,11 @@ import java.util.Map;
 
 enum BookInputStep {
     TITLE,
+
     AUTHOR,
+
+    NUMBER,
+
     YEAR
 }
 
@@ -18,20 +22,51 @@ public class MessageHandling implements MessageHandlingInterface {
 
     private PuzzleGame puzzleGame;
 
+    /**
+     * Работа обработчика сообщений в режиме игры в загадки
+     */
     private boolean puzzleMode;
 
+
+    /**
+     * Работа обработчика сообщений в режиме добавления книг
+     */
     private boolean bookMode;
 
+    /**
+     * Работа обработчика сообщений в режиме вывода книг по указанному автору
+     */
     private boolean authorBookMode;
 
+
+    /**
+     * Работа обработчика сообщений в режиме вывода книг по указанному году
+     */
     private boolean yearBookMode;
 
+
+    /**
+     * Работа обработчика сообщений в режиме удаления книги
+     */
     private boolean removeBookMode;
 
-    // Добавлены поля для отслеживания состояния добавления книги
+    /**
+     * Работа обработчика сообщений в режиме редактирования книги
+     */
+    private boolean editBookMode;
+
+
+    /**
+     * Отслеживание текущего шага работы с книгой
+     */
     private Map<Long, BookInputStep> bookInputSteps;
 
-    private Map<Long, String> bookData; // Собранные данные о книге
+    /**
+     * Собранные данные о книге
+     */
+
+    private Map<Long, String> bookData;
+
 
 
     /**
@@ -46,6 +81,7 @@ public class MessageHandling implements MessageHandlingInterface {
         authorBookMode = false;
         yearBookMode = false;
         removeBookMode = false;
+        editBookMode = false;
         bookInputSteps = new HashMap<>();
         bookData = new HashMap<>();
     }
@@ -69,8 +105,10 @@ public class MessageHandling implements MessageHandlingInterface {
             response = handleGetByAuthor(textMsg, chatId);
         }else if(yearBookMode){
             response = handleGetByYear(textMsg, chatId);
-        }else if(removeBookMode){
+        }else if(removeBookMode) {
             response = handleRemoveBook(textMsg, chatId);
+        }else if (editBookMode){
+            response = handleEditBookMode(textMsg, chatId);
         }else
             response = handleDefaultMode(textMsg, chatId);
 
@@ -139,43 +177,12 @@ public class MessageHandling implements MessageHandlingInterface {
             response = "Введите название книги:";
 
 
-        } else if (textMsg.startsWith("/editbook")) {
-            // Получаем уникальный номер книги и новые данные книги, введенные пользователем
-            String[] parts = textMsg.substring(10).split("\n");
-            if (parts.length == 4) {
-                int bookNumber;
-                String newTitle;
-                String newAuthor;
-                int newYear;
-                try {
-                    // Получаем уникальный номер книги
-                    bookNumber = Integer.parseInt(parts[0].trim());
-                    // Получаем новые данные книги
-                    newTitle = parts[1].trim();
-                    newAuthor = parts[2].trim();
-                    newYear = Integer.parseInt(parts[3].trim());
-
-                    // Проверяем существование книги с указанным уникальным номером в списке прочитанных книг
-                    ArrayList<String> readBooks = storage.getAllValues(chatId);
-                    if (bookNumber >= 1 && bookNumber <= readBooks.size()) {
-                        // Получаем старые данные книги
-                        String[] oldBookParts = readBooks.get(bookNumber - 1).split("\n");
-                        String oldTitle = oldBookParts[0];
-                        String oldAuthor = oldBookParts[1];
-                        int oldYear = Integer.parseInt(oldBookParts[2]);
-
-                        // Заменяем книгу в базе данных
-                        storage.editReadBook(oldTitle, oldAuthor, oldYear, newTitle, newAuthor, newYear, chatId);
-                        response = "Книга '" + oldTitle + "' успешно заменена на книгу '" + newTitle + "' от автора " + newAuthor + " (год: " + newYear + ") в списке прочитанных!";
-                    } else {
-                        response = "Указанный уникальный номер книги не существует в списке прочитанных книг.";
-                    }
-                } catch (NumberFormatException e) {
-                    response = "Некорректный формат уникального номера книги или года прочтения.";
-                }
-            } else {
-                response = "Некорректный формат ввода. Используйте /editbook Уникальный_номер\n Новое_название\nНовый_автор\nНовый_год";
-            }
+        } else   if (textMsg.equals("/editbook")) {
+            // Переходим в режим редактирования книг
+            editBookMode = true;
+            bookInputSteps.put(chatId, BookInputStep.NUMBER);
+            bookData.put(chatId, ""); // Инициализируем пустой строкой
+            response = "Введите номер книги из списка /getread, которую хотите изменить:";
 
 
         } else if (textMsg.equals("/clearread")) {
@@ -196,7 +203,6 @@ public class MessageHandling implements MessageHandlingInterface {
                 }
                 response = responseBuilder.toString();
             }
-
 
         } else if (textMsg.startsWith("/getbyauthor")) {
             authorBookMode = true;
@@ -232,7 +238,13 @@ public class MessageHandling implements MessageHandlingInterface {
     }
 
 
-    // Обновленный метод для обработки добавления книги
+    /**
+     * Обрабатывает ввод пользователя в режиме добавления новой книги.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение в ответ на ввод пользователя.
+     */
     private String handleBookMode(String textMsg, long chatId) {
         String response;
 
@@ -255,7 +267,6 @@ public class MessageHandling implements MessageHandlingInterface {
                 case YEAR:
                     try {
                         int year = Integer.parseInt(textMsg.trim());
-                        bookData.put(chatId, bookData.get(chatId) + "\n" + year); // Сохраняем год прочтения книги
 
                         // Проверяем существование книги в базе данных
                         String[] parts = bookData.get(chatId).split("\n");
@@ -288,7 +299,14 @@ public class MessageHandling implements MessageHandlingInterface {
         return response;
     }
 
-    // Обновленный метод для обработки /getbyauthor
+
+    /**
+     * Обрабатывает ввод пользователя для получения списка книг по автору.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение с результатами запроса книг по автору.
+     */
     private String handleGetByAuthor(String textMsg, long chatId) {
         String response;
 
@@ -329,7 +347,13 @@ public class MessageHandling implements MessageHandlingInterface {
     }
 
 
-    // Обновленный метод для обработки /getbyyear
+    /**
+     * Обрабатывает ввод пользователя для получения списка книг по году.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение с результатами запроса книг по году.
+     */
     private String handleGetByYear(String textMsg, long chatId) {
         String response;
 
@@ -367,47 +391,119 @@ public class MessageHandling implements MessageHandlingInterface {
         return response;
     }
 
-    // Обновленный метод для обработки /removebook
+
+    /**
+     * Обрабатывает ввод пользователя для удаления книги из списка прочитанных.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение с результатами удаления книги.
+     */
     private String handleRemoveBook(String textMsg, long chatId) {
         String response;
-
         // Проверяем текущий шаг ввода для данного чата
         BookInputStep currentStep = bookInputSteps.getOrDefault(chatId, BookInputStep.TITLE);
-
         // Если пользователь отправляет произвольное сообщение, предполагаем, что это номер книги
         if (currentStep == BookInputStep.TITLE) {
             try {
                 int bookNumber = Integer.parseInt(textMsg.trim());
                 ArrayList<String> readBooks = storage.getReadBooks(chatId);
-
                 if (bookNumber >= 1 && bookNumber <= readBooks.size()) {
                     String removedBook = readBooks.remove(bookNumber - 1); // Удаляем книгу и получаем ее данные
                     storage.updateReadBooks(chatId, readBooks); // Обновляем список без удаленной книги
+                    removeBookMode = false;
                     response = "Книга " + removedBook + " успешно удалена из списка прочитанных!";
                 } else {
-                    response = "Указанный номер книги не существует.";
-                    removeBookMode = false;
+                    response = "Указанный уникальный номер книги не существует в списке прочитанных книг.";
                 }
             } catch (NumberFormatException e) {
                 response = "Некорректный формат номера книги.";
-                removeBookMode = false;
             }
-
             // Сбрасываем состояние для данного чата
             bookInputSteps.remove(chatId);
             bookData.remove(chatId);
-            removeBookMode = false;
         } else {
-            // Инициализация ввода номера книги для удаления
-            bookInputSteps.put(chatId, BookInputStep.TITLE);
-            bookData.put(chatId, ""); // Инициализируем пустой строкой
-            response = "Введите номер книги из списка /getread, которую хотите удалить:";
-            removeBookMode = false;
+            response = "Неизвестная ошибка в процессе удаления книги.";
         }
 
         return response;
     }
 
 
+    /**
+     * Обрабатывает ввод пользователя в режиме редактирования существующей книги.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение в ответ на ввод пользователя.
+     */
+    private String handleEditBookMode(String textMsg, long chatId) {
+        String response;
 
+        // Проверяем текущий шаг ввода для данного чата
+        BookInputStep currentStep = bookInputSteps.getOrDefault(chatId, BookInputStep.NUMBER);
+
+        // Проверяем, является ли введенный текст числом
+        if (currentStep == BookInputStep.NUMBER) {
+            try {
+                int bookNumber = Integer.parseInt(textMsg.trim());
+
+                // Проверяем существование книги с указанным уникальным номером в списке прочитанных книг
+                ArrayList<String> readBooks = storage.getAllValues(chatId);
+                if (bookNumber >= 1 && bookNumber <= readBooks.size()) {
+                    // Сохраняем номер книги для последующего использования
+                    bookData.put(chatId, textMsg.trim());
+                    bookInputSteps.put(chatId, BookInputStep.TITLE); // Переходим к следующему шагу
+                    response = "Теперь введите новое название книги:";
+                } else {
+                    response = "Указанный уникальный номер книги не существует в списке прочитанных книг.";
+                }
+            } catch (NumberFormatException e) {
+                response = "Некорректный формат номера книги.";
+            }
+        } else {
+            // Если это не число, то предполагаем, что это данные книги
+            switch (currentStep) {
+                case TITLE:
+                    bookData.put(chatId, bookData.get(chatId) + "\n" + textMsg.trim()); // Сохраняем новое название книги
+                    bookInputSteps.put(chatId, BookInputStep.AUTHOR); // Переходим к следующему шагу
+                    response = "Теперь введите нового автора книги:";
+                    break;
+                case AUTHOR:
+                    bookData.put(chatId, bookData.get(chatId) + "\n" + textMsg.trim()); // Сохраняем автора книги
+                    bookInputSteps.put(chatId, BookInputStep.YEAR); // Переходим к следующему шагу
+                    response = "Теперь введите новый год прочтения книги:";
+                    break;
+                case YEAR:
+                    try {
+                        bookData.put(chatId, bookData.get(chatId) + "\n" + textMsg.trim()); // Сохраняем год прочтения книги
+                        String[] parts = bookData.get(chatId).split("\n");
+                            int bookNumber = Integer.parseInt(parts[0]);
+                            // Получаем новые данные книги
+                            String newTitle = parts[1];
+                            String newAuthor = parts[2];
+                            int newYear = Integer.parseInt(parts[3]);
+                        // Получаем старые данные книги
+                        ArrayList<String> readBooks = storage.getAllValues(chatId);
+                        String[] oldBookParts = readBooks.get(bookNumber - 1).split("\n");
+                        String oldTitle = oldBookParts[0];
+                        String oldAuthor = oldBookParts[1];
+                        int oldYear = Integer.parseInt(oldBookParts[2]);
+                                //Обновляем данные о книге в базе данных
+                                storage.editReadBook(oldTitle, oldAuthor, oldYear, newTitle, newAuthor, newYear, chatId);
+                                editBookMode = false;
+                                response = "Книга '" + oldTitle + "' успешно отредактирована в списке прочитанных!";
+                            // Сбрасываем состояние редактирования книги для данного чата
+                            bookInputSteps.remove(chatId);
+                            bookData.remove(chatId);
+                    } catch (NumberFormatException e) {
+                        response = "Некорректный формат года прочтения. Пожалуйста, введите год цифрами.";
+                    }
+                    break;
+                default:
+                    response = "Неизвестная ошибка в процессе редактирования книги.";
+            }
+        }
+        return response;
+    }
 }
