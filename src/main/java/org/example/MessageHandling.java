@@ -5,8 +5,11 @@ import java.util.Map;
 
 enum BookInputStep {
     TITLE,
+    
     AUTHOR,
+    
     NUMBER,
+    
     YEAR
 }
 
@@ -19,22 +22,50 @@ public class MessageHandling implements MessageHandlingInterface {
 
     private PuzzleGame puzzleGame;
 
+    /**
+     * Работа обработчика сообщений в режиме игры в загадки
+     */
     private boolean puzzleMode;
+    
 
+    /**
+     * Работа обработчика сообщений в режиме добавления книг
+     */
     private boolean bookMode;
 
+    /**
+     * Работа обработчика сообщений в режиме вывода книг по указанному автору
+     */
     private boolean authorBookMode;
 
+
+    /**
+     * Работа обработчика сообщений в режиме вывода книг по указанному году
+     */
     private boolean yearBookMode;
 
+
+    /**
+     * Работа обработчика сообщений в режиме удаления книги
+     */
     private boolean removeBookMode;
 
+    /**
+     * Работа обработчика сообщений в режиме редактирования книги
+     */
     private boolean editBookMode;
+    
 
-    // Добавлены поля для отслеживания состояния добавления книги
+    /**
+     * Отслеживание текущего шага работы с книгой
+     */
     private Map<Long, BookInputStep> bookInputSteps;
 
-    private Map<Long, String> bookData; // Собранные данные о книге
+    /**
+     * Собранные данные о книге
+     */
+
+    private Map<Long, String> bookData; 
 
 
 
@@ -207,7 +238,13 @@ public class MessageHandling implements MessageHandlingInterface {
     }
 
 
-    // Обновленный метод для обработки добавления книги
+    /**
+     * Обрабатывает ввод пользователя в режиме добавления новой книги.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение в ответ на ввод пользователя.
+     */
     private String handleBookMode(String textMsg, long chatId) {
         String response;
 
@@ -262,7 +299,14 @@ public class MessageHandling implements MessageHandlingInterface {
         return response;
     }
 
-    // Обновленный метод для обработки /getbyauthor
+
+    /**
+     * Обрабатывает ввод пользователя для получения списка книг по автору.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение с результатами запроса книг по автору.
+     */
     private String handleGetByAuthor(String textMsg, long chatId) {
         String response;
 
@@ -303,7 +347,13 @@ public class MessageHandling implements MessageHandlingInterface {
     }
 
 
-    // Обновленный метод для обработки /getbyyear
+    /**
+     * Обрабатывает ввод пользователя для получения списка книг по году.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение с результатами запроса книг по году.
+     */
     private String handleGetByYear(String textMsg, long chatId) {
         String response;
 
@@ -342,7 +392,13 @@ public class MessageHandling implements MessageHandlingInterface {
     }
 
 
-    // Обновленный метод для обработки /removebook
+    /**
+     * Обрабатывает ввод пользователя для удаления книги из списка прочитанных.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение с результатами удаления книги.
+     */
     private String handleRemoveBook(String textMsg, long chatId) {
         String response;
         // Проверяем текущий шаг ввода для данного чата
@@ -374,7 +430,13 @@ public class MessageHandling implements MessageHandlingInterface {
     }
 
 
-    // Обработка режима редактирования книг
+    /**
+     * Обрабатывает ввод пользователя в режиме редактирования существующей книги.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение в ответ на ввод пользователя.
+     */
     private String handleEditBookMode(String textMsg, long chatId) {
         String response;
 
@@ -446,7 +508,6 @@ public class MessageHandling implements MessageHandlingInterface {
         }
         return response;
     }
-
 }
 
 
