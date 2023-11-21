@@ -5,11 +5,11 @@ import java.util.Map;
 
 enum BookInputStep {
     TITLE,
-    
+
     AUTHOR,
-    
+
     NUMBER,
-    
+
     YEAR
 }
 
@@ -26,7 +26,7 @@ public class MessageHandling implements MessageHandlingInterface {
      * Работа обработчика сообщений в режиме игры в загадки
      */
     private boolean puzzleMode;
-    
+
 
     /**
      * Работа обработчика сообщений в режиме добавления книг
@@ -54,7 +54,7 @@ public class MessageHandling implements MessageHandlingInterface {
      * Работа обработчика сообщений в режиме редактирования книги
      */
     private boolean editBookMode;
-    
+
 
     /**
      * Отслеживание текущего шага работы с книгой
@@ -65,7 +65,7 @@ public class MessageHandling implements MessageHandlingInterface {
      * Собранные данные о книге
      */
 
-    private Map<Long, String> bookData; 
+    private Map<Long, String> bookData;
 
 
 
@@ -498,8 +498,6 @@ public class MessageHandling implements MessageHandlingInterface {
                             bookData.remove(chatId);
                     } catch (NumberFormatException e) {
                         response = "Некорректный формат года прочтения. Пожалуйста, введите год цифрами.";
-                        // Переходим к предыдущему шагу
-                        bookInputSteps.put(chatId, BookInputStep.AUTHOR);
                     }
                     break;
                 default:
