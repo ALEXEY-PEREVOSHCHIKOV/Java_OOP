@@ -206,8 +206,14 @@ public class MessageHandling implements MessageHandlingInterface {
         return response;
     }
 
-
-    // Обновленный метод для обработки добавления книги
+     
+     /**
+     * Обрабатывает ввод пользователя в режиме добавления новой книги.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение в ответ на ввод пользователя.
+     */
     private String handleBookMode(String textMsg, long chatId) {
         String response;
 
@@ -263,7 +269,13 @@ public class MessageHandling implements MessageHandlingInterface {
         return response;
     }
 
-     // Обработка режима редактирования книг
+     /**
+     * Обрабатывает ввод пользователя в режиме редактирования существующей книги.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение в ответ на ввод пользователя.
+     */
     private String handleEditBookMode(String textMsg, long chatId) {
         String response;
 
@@ -335,6 +347,14 @@ public class MessageHandling implements MessageHandlingInterface {
         }
         return response;
     }
+
+          /**
+     * Обрабатывает ввод пользователя для получения списка книг по автору.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение с результатами запроса книг по автору.
+     */
         private String handleGetByAuthor(String textMsg, long chatId) {
         String response;
  
@@ -373,6 +393,13 @@ public class MessageHandling implements MessageHandlingInterface {
  
         return response;
     }
+     /**
+     * Обрабатывает ввод пользователя для получения списка книг по году.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение с результатами запроса книг по году.
+     */
         private String handleGetByYear(String textMsg, long chatId) {
         String response;
  
@@ -409,6 +436,13 @@ public class MessageHandling implements MessageHandlingInterface {
  
         return response;
     }
+     /**
+     * Обрабатывает ввод пользователя для удаления книги из списка прочитанных.
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение с результатами удаления книги.
+     */
         private String handleRemoveBook(String textMsg, long chatId) {
         String response;
  
