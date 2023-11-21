@@ -1,72 +1,10 @@
-package org.example;
+kage org.example;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-/**
- * Интерфейс для игры в загадки.
- */
-interface PuzzleGameInterface {
-
-    /**
-     * Начинает новую головоломку для указанного чата.
-     *
-     * @param chatId Идентификатор чата, в котором начинается головоломка.
-     * @return Сообщение с вопросом текущей головоломки.
-     */
-    String startPuzzle(long chatId);
-
-    /**
-     * Проверяет ответ пользователя на текущую головоломку.
-     *
-     * @param chatId     Идентификатор чата, откуда получен ответ пользователя.
-     * @param userAnswer Ответ пользователя на головоломку.
-     * @return Сообщение с результатом проверки ответа пользователя.
-     */
-    String checkAnswer(long chatId, String userAnswer);
-
-    /**
-     * Возвращает подсказку для текущей головоломки.
-     *
-     * @return Подсказка для текущей головоломки.
-     */
-    String getHint();
-
-    /**
-     * Выбирает следующую головоломку для указанного чата.
-     *
-     * @param chatId Идентификатор чата, для которого выбирается следующая головоломка.
-     * @return Сообщение с вопросом следующей головоломки.
-     */
-    String getNextPuzzle(long chatId);
-
-    /**
-     * Возвращает статистику ответов пользователя для указанного чата.
-     *
-     * @param chatId Идентификатор чата, для которого возвращается статистика.
-     * @return Статистика ответов пользователя в виде текстового сообщения.
-     */
-    String getStatistics(long chatId);
-
-    /**
-     * Перезапускает игровую сессию.
-     *
-     * @param chatId Идентификатор чата, для которого возвращается ответ на загадку.
-     * @return Сообщение о начале новой игры.
-     */
-    String restart(long chatId);
-
-    /**
-     * Возвращает ответ на текущую загадку, записывает её как нерешённую и переходит к следующей загадке.
-     *
-     * @param chatId Идентификатор чата, для которого возвращается ответ на загадку.
-     * @return Ответ на текущую загадку и следующая загадка.
-     */
-    String getAnswerAndNextPuzzle(long chatId);
-}
 
 /**
  * Класс представляет собой объект головоломки.
@@ -225,7 +163,7 @@ public class PuzzleGame implements PuzzleGameInterface {
                 puzzles.remove(currentPuzzle.getQuestion());
                 // Проверка, остались ли еще загадки для решения
                 if (puzzles.isEmpty()) {
-                    return "Поздравляю, вы решили все загадки! Поздравляю, вы решили все загадки! Пожалуйста, нажмите /stoppuzzle, чтобы завершить игру и посмотреть статистику, либо /restart, чтобы начать заново";
+                    return "Поздравляю, вы решили все загадки! Пожалуйста, нажмите /stoppuzzle, чтобы завершить игру и посмотреть статистику, либо /restart, чтобы начать заново";
                 } else {
                     // Выбор следующей случайной загадки и сообщение пользователю
                     currentPuzzle = puzzles.get(getRandomPuzzle());
@@ -237,7 +175,7 @@ public class PuzzleGame implements PuzzleGameInterface {
             }
         } else {
             // Сообщение об окончании загадок, если все загадки решены
-            return "Поздравляю, вы решили все загадки! Поздравляю, вы решили все загадки! Пожалуйста, нажмите /stoppuzzle, чтобы завершить игру и посмотреть статистику, либо /restart, чтобы начать заново";
+            return "Поздравляю, вы решили все загадки! Пожалуйста, нажмите /stoppuzzle, чтобы завершить игру и посмотреть статистику, либо /restart, чтобы начать заново";
         }
     }
 
@@ -262,7 +200,7 @@ public class PuzzleGame implements PuzzleGameInterface {
      *
      * @return Ключ выбранной случайной головоломки.
      */
-    private String getRandomPuzzle() {
+    public String getRandomPuzzle() {
         // Создание списка ключей (вопросов) из коллекции доступных загадок
         List<String> puzzleList = new ArrayList<>(puzzles.keySet());
         // Создание объекта Random для генерации случайного числа
@@ -279,6 +217,11 @@ public class PuzzleGame implements PuzzleGameInterface {
      * @return Сообщение с вопросом следующей головоломки.
      */
     public String getNextPuzzle(long chatId) {
+        // Проверка, что текущая загадка не пуста перед удалением
+        if (currentPuzzle == null) {
+            // Если текущая загадка пуста, возвращаем сообщение об этом
+            return "Нет текущей загадки!";
+        }
         // Удаление текущей загадки
         puzzles.remove(currentPuzzle.getQuestion());
         // Сброс попыток пользователя
@@ -286,11 +229,10 @@ public class PuzzleGame implements PuzzleGameInterface {
         // Проверка, есть ли еще доступные загадки для решения
         if (puzzles.isEmpty()) {
             return "Все загадки решены! Поздравляю, вы решили все загадки! Пожалуйста, нажмите /stoppuzzle, чтобы завершить игру и посмотреть статистику, либо /restart, чтобы начать заново";
-        } else {
-            // Выбор следующей случайной загадки и сообщение пользователю
-            currentPuzzle = puzzles.get(getRandomPuzzle());
-            return "Следующая загадка: " + currentPuzzle.getQuestion();
         }
+        // Выбор следующей случайной загадки и сообщение пользователю
+        currentPuzzle = puzzles.get(getRandomPuzzle());
+        return "Следующая загадка: " + currentPuzzle.getQuestion();
     }
 
 
@@ -362,26 +304,38 @@ public class PuzzleGame implements PuzzleGameInterface {
         if (currentPuzzle == null) {
             return "Нет текущей загадки.";
         }
-        // Формирование строки с ответом на текущую загадку
-        String answer = "Ответ на загадку '" + currentPuzzle.getQuestion() + "' : " + currentPuzzle.getAnswer();
 
-        // Удаление текущей загадки и сброс попыток пользователя
-        puzzles.remove(currentPuzzle.getQuestion());
-        userAttempts.put(chatId, 0);
-        // Проверка, остались ли еще доступные загадки для решения
-        if (puzzles.isEmpty()) {
-            return answer + "\nПоздравляю, вы решили все загадки! Пожалуйста, нажмите /stoppuzzle, чтобы завершить игру и посмотреть статистику, либо /restart, чтобы начать заново";
-        } else {
-            // Выбор следующей случайной загадки и формирование сообщения пользователю
-            currentPuzzle = puzzles.get(getRandomPuzzle());
-            return answer + "\nСледующая загадка: " + currentPuzzle.getQuestion();
-        }
+        // Формирование строки с ответом на текущую загадку
+        String answer = "Ответ на загадку: " + currentPuzzle.getAnswer()+".";
+
+        // Вызов метода getNextPuzzle для обновления текущей загадки и получения сообщения для пользователя
+        String nextPuzzleMessage = getNextPuzzle(chatId);
+
+        // Комбинирование строки с ответом и сообщением о следующей загадке
+        return answer + "\n" + nextPuzzleMessage;
     }
 
+
+    /**
+     * возвращает все загадки из спичка загадок puzzle
+     */
+    public Map<String, Puzzle> getPuzzles() {
+        return puzzles;
+    }
+
+
+    /**
+     * устанавливает новый список загадок puzzle
+     */
+    public void setPuzzles (Map<String, Puzzle> puzzles){
+        this.puzzles= puzzles;
+    }
+
+
+    /**
+     * устанавливает новую текущую загадку
+     */
+    public void setCurrentPuzzle (Puzzle currentPuzzle){
+        this.currentPuzzle = currentPuzzle;
+    }
 }
-
-
-
-
-
-
