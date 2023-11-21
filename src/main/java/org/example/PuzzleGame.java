@@ -1,4 +1,4 @@
-kage org.example;
+package org.example;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -317,7 +317,7 @@ public class PuzzleGame implements PuzzleGameInterface {
 
 
     /**
-     * возвращает все загадки из спичка загадок puzzle
+     * возвращает все загадки из списка загадок puzzle
      */
     public Map<String, Puzzle> getPuzzles() {
         return puzzles;
