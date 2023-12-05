@@ -320,7 +320,8 @@ public class MessageHandling implements MessageHandlingInterface {
             response = "Введите номер книги из списка /getread, которую хотите удалить:";
 
 
-        } else if (textMsg.equals("/playpuzzle")) {
+         } else if (textMsg.equals("/playpuzzle")) {
+            userStates.put(chatId, UserState.PUZZLE_MODE);
             // Вход в режим головоломки
             puzzleMode = true;
             response = puzzleGame.startPuzzle(chatId);
