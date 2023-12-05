@@ -45,15 +45,10 @@ public class BookVoting implements BookVotingInterface{
      */
     public String showBookList(long chatId) {
         StringBuilder response = new StringBuilder();
-        response.append("Выберите 3 понравившиеся книги, отправив их номера последовательно:\n");
+        response.append(" Пожалуйста, выберите 3 книги из списка популярных книг этого месяца ниже, которые вам нравятся больше всего, это поможет нам определить победителя. После этого сообщения отправьте номер первой наиболее понравившейся книги.\n");
         int bookNumber = 1;
         for (int i = 0; i < theBooks.getSize(); i++) {
             response.append(bookNumber).append(". ").append(theBooks.getBookByNumber(bookNumber).toString());
-            // Добавим количество голосов для текущей книги только при запросе результатов
-            if (votingModes.getOrDefault(chatId, false)) {
-                int votesCount = bookVotesCount.getOrDefault(bookNumber, 0);
-                response.append(" - ").append(votesCount).append(" голосов");
-            }
             response.append("\n");
             bookNumber++;
         }
@@ -108,7 +103,6 @@ public class BookVoting implements BookVotingInterface{
                 bookVotes.put(bookNumber, bookVotes.getOrDefault(bookNumber, 0) + (3 - i));
             }
         }
-        // Сортируем книги по количеству голосов в убывающем порядке
         List<Map.Entry<Integer, Integer>> sortedVotes = new ArrayList<>(bookVotes.entrySet());
         sortedVotes.sort((entry1, entry2) -> entry2.getValue().compareTo(entry1.getValue()));
         return sortedVotes;
@@ -121,14 +115,13 @@ public class BookVoting implements BookVotingInterface{
      * @return результат голосования.
      */
     public String finishVoting() {
-        StringBuilder result = new StringBuilder("Голосование окончено.Итоги голосования:\n");
+        StringBuilder result = new StringBuilder("Голосование за книгу месяца уже окончено. В этом месяце по итогам голосования читаем:\n");
         // Получаем топ-1 книгу с наибольшим числом голосов
         List<TheBooks.Book> topBook = getTopBook();
-        result.append("Книга с наибольшим числом голосов:\n");
         for (TheBooks.Book book : topBook) {
             result.append(book).append("\n");
         }
-        result.append("Вы можете присоединиться к нам и начать читать вместе!\n");
+        result.append("Вы можете присоединиться к нам и начать читать вместе! Новое голосование начнётся 1 числа следующего месяца.");
         return result.toString();
     }
 
@@ -153,23 +146,30 @@ public class BookVoting implements BookVotingInterface{
 
 
     /**
-     * Получает статистику голосования.
+     * Возвращает текущий список книг в порядке убывания количества голосов.
      *
-     * @return статистика голосования.
+     * @return строка с перечислением книг и количеством голосов в порядке убывания.
      */
     public String getVotingStatistics() {
-        StringBuilder statistics = new StringBuilder();
-        int bookNumber = 1;
-
-        for (int i = 0; i < theBooks.getSize(); i++) {
-            statistics.append(bookNumber).append(" ").append(theBooks.getBookByNumber(bookNumber).toString());
-
-            // Добавим количество голосов для текущей книги
+        // Создаем список строк для представления каждой книги с количеством голосов
+        List<String> booksWithVotes = new ArrayList<>();
+        // Для каждой книги в TheBooks добавляем строку с информацией о книге и количестве голосов
+        for (int bookNumber = 1; bookNumber <= theBooks.getSize(); bookNumber++) {
+            String bookInfo = theBooks.getBookByNumber(bookNumber).toString();
             int votesCount = bookVotesCount.getOrDefault(bookNumber, 0);
-            statistics.append(" - ").append(votesCount).append(" голосов");
-
-            statistics.append("\n");
-            bookNumber++;
+            String bookWithVotes = bookInfo + " - " + votesCount + " голос(ов)";
+            booksWithVotes.add(bookWithVotes);
+        }
+        // Сортируем список по убыванию количества голосов
+        booksWithVotes.sort((book1, book2) -> {
+            int votesCount1 = Integer.parseInt(book1.substring(book1.lastIndexOf("-") + 1, book1.lastIndexOf(" голос(ов)")).trim());
+            int votesCount2 = Integer.parseInt(book2.substring(book2.lastIndexOf("-") + 1, book2.lastIndexOf(" голос(ов)")).trim());
+            return Integer.compare(votesCount2, votesCount1);
+        });
+        // Формируем итоговую строку
+        StringBuilder statistics = new StringBuilder("Статистика голосования:\n");
+        for (String bookWithVotes : booksWithVotes) {
+            statistics.append(bookWithVotes).append("\n");
         }
         return statistics.toString();
     }
@@ -194,5 +194,4 @@ public class BookVoting implements BookVotingInterface{
         }
     }
 }
-
 
