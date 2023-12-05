@@ -1,5 +1,5 @@
 package org.example;
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.*;
 
 enum BookInputStep {
@@ -45,7 +45,7 @@ public class MessageHandling implements MessageHandlingInterface {
     /**
      * День, когда заканчивается голосование.
      */
-    private int VOTING_END_DAY = 5;
+    private int VOTING_END_DAY = 4;
 
     /**
      * Множество чатов, в которых в данный момент идет голосование.
@@ -125,6 +125,8 @@ public class MessageHandling implements MessageHandlingInterface {
 
     public Map<Long, UserState> userStates;
 
+    private LocalDateTime currentDate;
+
 
     public UserState getUserState(long chatId) {
         return userStates.getOrDefault(chatId, UserState.DEFAULT);
@@ -148,6 +150,7 @@ public class MessageHandling implements MessageHandlingInterface {
         userStates = new HashMap<>();
         bookInputSteps = new HashMap<>();
         bookData = new HashMap<>();
+        currentDate = LocalDateTime.now();
     }
 
 
@@ -245,7 +248,6 @@ public class MessageHandling implements MessageHandlingInterface {
      */
     private String handleDefaultMode(String textMsg, long chatId) {
         String response;
-        LocalDate currentDate = LocalDate.now();
         int currentDay = currentDate.getDayOfMonth();
         // Сравниваем текст пользователя с командами, на основе этого формируем ответ
         if (textMsg.equals("/start") || textMsg.equals("/help")) {
@@ -320,7 +322,7 @@ public class MessageHandling implements MessageHandlingInterface {
             response = "Введите номер книги из списка /getread, которую хотите удалить:";
 
 
-         } else if (textMsg.equals("/playpuzzle")) {
+        } else if (textMsg.equals("/playpuzzle")) {
             userStates.put(chatId, UserState.PUZZLE_MODE);
             // Вход в режим головоломки
             puzzleMode = true;
@@ -657,6 +659,10 @@ public class MessageHandling implements MessageHandlingInterface {
      */
     public void setVotingEndDay(int votingEndDay) {
         this.VOTING_END_DAY = votingEndDay;
+    }
+
+    public void setCurrentDate(LocalDateTime currentDate) {
+        this.currentDate = currentDate;
     }
 
 }
