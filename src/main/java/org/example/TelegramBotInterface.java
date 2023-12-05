@@ -12,6 +12,7 @@ public interface TelegramBotInterface {
      *
      * @return Объект ReplyKeyboardMarkup с настроенной клавиатурой.
      */
-    ReplyKeyboardMarkup createKeyboard();
+     ReplyKeyboardMarkup createKeyboard(long chatId);
 }
+
 
