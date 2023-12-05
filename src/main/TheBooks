@@ -1,0 +1,221 @@
+package org.example;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+
+public class TheBooks {
+
+    private int currentMonth;
+    private List<Book> books;
+
+    public TheBooks() {
+        updateCurrentMonth();
+        initializeBooks(allBooks);
+    }
+
+    private void updateCurrentMonth() {
+        LocalDateTime now = LocalDateTime.now();
+        this.currentMonth = now.getMonthValue();
+    }
+
+    public void initializeBooks(List<Book> allBooks) {
+        books = new ArrayList<>();
+        int startBookIndex = (currentMonth - 1) * 10;
+        int endBookIndex = startBookIndex + 9;
+
+        for (int i = startBookIndex; i <= endBookIndex; i++) {
+            books.add(allBooks.get(i));
+        }
+    }
+
+
+    List<Book> allBooks = Arrays.asList(
+            new Book("Название1", "Автор1"),
+            new Book("Название2", "Автор2"),
+            new Book("Название3", "Автор3"),
+            new Book("Название4", "Автор4"),
+            new Book("Название5", "Автор5"),
+            new Book("Название6", "Автор6"),
+            new Book("Название7", "Автор7"),
+            new Book("Название8", "Автор8"),
+            new Book("Название9", "Автор9"),
+            new Book("Название10", "Автор10"),
+            new Book("Название11", "Автор11"),
+            new Book("Название12", "Автор12"),
+            new Book("Название13", "Автор13"),
+            new Book("Название14", "Автор14"),
+            new Book("Название15", "Автор15"),
+            new Book("Название16", "Автор16"),
+            new Book("Название17", "Автор17"),
+            new Book("Название18", "Автор18"),
+            new Book("Название19", "Автор19"),
+            new Book("Название20", "Автор20"),
+            new Book("Название21", "Автор1"),
+            new Book("Название22", "Автор2"),
+            new Book("Название23", "Автор3"),
+            new Book("Название24", "Автор4"),
+            new Book("Название25", "Автор5"),
+            new Book("Название26", "Автор6"),
+            new Book("Название27", "Автор7"),
+            new Book("Название28", "Автор8"),
+            new Book("Название29", "Автор9"),
+            new Book("Название30", "Автор10"),
+            new Book("Название31", "Автор11"),
+            new Book("Название32", "Автор12"),
+            new Book("Название33", "Автор13"),
+            new Book("Название34", "Автор14"),
+            new Book("Название35", "Автор15"),
+            new Book("Название36", "Автор16"),
+            new Book("Название37", "Автор17"),
+            new Book("Название38", "Автор18"),
+            new Book("Название39", "Автор19"),
+            new Book("Название40", "Автор20"),
+            new Book("Название41", "Автор1"),
+            new Book("Название42", "Автор2"),
+            new Book("Название43", "Автор3"),
+            new Book("Название44", "Автор4"),
+            new Book("Название45", "Автор5"),
+            new Book("Название46", "Автор6"),
+            new Book("Название47", "Автор7"),
+            new Book("Название48", "Автор8"),
+            new Book("Название49", "Автор9"),
+            new Book("Название50", "Автор10"),
+            new Book("Название51", "Автор11"),
+            new Book("Название52", "Автор12"),
+            new Book("Название53", "Автор13"),
+            new Book("Название54", "Автор14"),
+            new Book("Название55", "Автор15"),
+            new Book("Название56", "Автор16"),
+            new Book("Название57", "Автор17"),
+            new Book("Название58", "Автор18"),
+            new Book("Название59", "Автор19"),
+            new Book("Название60", "Автор20"),
+            new Book("Название61", "Автор1"),
+            new Book("Название62", "Автор2"),
+            new Book("Название63", "Автор3"),
+            new Book("Название64", "Автор4"),
+            new Book("Название65", "Автор5"),
+            new Book("Название66", "Автор6"),
+            new Book("Название67", "Автор7"),
+            new Book("Название68", "Автор8"),
+            new Book("Название69", "Автор9"),
+            new Book("Название70", "Автор10"),
+            new Book("Название71", "Автор1"),
+            new Book("Название72", "Автор2"),
+            new Book("Название73", "Автор3"),
+            new Book("Название74", "Автор4"),
+            new Book("Название75", "Автор5"),
+            new Book("Название76", "Автор6"),
+            new Book("Название77", "Автор7"),
+            new Book("Название78", "Автор8"),
+            new Book("Название79", "Автор9"),
+            new Book("Название80", "Автор10"),
+            new Book("Название81", "Автор1"),
+            new Book("Название82", "Автор2"),
+            new Book("Название83", "Автор3"),
+            new Book("Название84", "Автор4"),
+            new Book("Название85", "Автор5"),
+            new Book("Название86", "Автор6"),
+            new Book("Название87", "Автор7"),
+            new Book("Название88", "Автор8"),
+            new Book("Название89", "Автор9"),
+            new Book("Название90", "Автор10"),
+            new Book("Название91", "Автор1"),
+            new Book("Название92", "Автор2"),
+            new Book("Название93", "Автор3"),
+            new Book("Название94", "Автор4"),
+            new Book("Название95", "Автор5"),
+            new Book("Название96", "Автор6"),
+            new Book("Название97", "Автор7"),
+            new Book("Название98", "Автор8"),
+            new Book("Название99", "Автор9"),
+            new Book("Название100", "Автор10"),
+            new Book("Название101", "Автор1"),
+            new Book("Название102", "Автор2"),
+            new Book("Название103", "Автор3"),
+            new Book("Название104", "Автор4"),
+            new Book("Название105", "Автор5"),
+            new Book("Название106", "Автор6"),
+            new Book("Название107", "Автор7"),
+            new Book("Название108", "Автор8"),
+            new Book("Название109", "Автор9"),
+            new Book("Название110", "Автор10"),
+            new Book("Название111", "Автор1"),
+            new Book("Название112", "Автор2"),
+            new Book("Название113", "Автор3"),
+            new Book("Название114", "Автор4"),
+            new Book("Название115", "Автор5"),
+            new Book("Название116", "Автор6"),
+            new Book("Название117", "Автор7"),
+            new Book("Название118", "Автор8"),
+            new Book("Название119", "Автор9"),
+            new Book("Название120", "Автор10"),
+            new Book("Название121", "Автор1"),
+            new Book("Название122", "Автор2"),
+            new Book("Название123", "Автор3"),
+            new Book("Название124", "Автор4"),
+            new Book("Название125", "Автор5"),
+            new Book("Название126", "Автор6"),
+            new Book("Название127", "Автор7"),
+            new Book("Название128", "Автор8"),
+            new Book("Название129", "Автор9"),
+            new Book("Название130", "Автор10"),
+            new Book("Название131", "Автор1"),
+            new Book("Название132", "Автор2"),
+            new Book("Название133", "Автор3"),
+            new Book("Название134", "Автор4"),
+            new Book("Название135", "Автор5"),
+            new Book("Название136", "Автор6"),
+            new Book("Название137", "Автор7"),
+            new Book("Название138", "Автор8"),
+            new Book("Название139", "Автор9"),
+            new Book("Название140", "Автор10"),
+            new Book("Название141", "Автор1"),
+            new Book("Название142", "Автор2"),
+            new Book("Название143", "Автор3"),
+            new Book("Название144", "Автор4"),
+            new Book("Название145", "Автор5"),
+            new Book("Название146", "Автор6"),
+            new Book("Название147", "Автор7"),
+            new Book("Название148", "Автор8"),
+            new Book("Название149", "Автор9"),
+            new Book("Название150", "Автор10")
+    );
+
+    public List<Book> getBooks() {
+        return books;
+    }
+
+    public Book getBookByNumber(int bookNumber) {
+        if (bookNumber >= 1 && bookNumber <= books.size()) {
+            return books.get(bookNumber - 1);
+        } else {
+            return null;
+        }
+    }
+
+    public int getSize() {
+        return books.size();
+    }
+
+    public int getNumber(Book book) {
+        return books.indexOf(book) + 1;
+    }
+
+    public static class Book {
+        private String title;
+        private String author;
+
+        public Book(String title, String author) {
+            this.title = title;
+            this.author = author;
+        }
+
+        @Override
+        public String toString() {
+            return title + " \n" + author;
+        }
+    }
+}

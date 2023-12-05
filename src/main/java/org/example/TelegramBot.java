@@ -59,22 +59,18 @@ public class TelegramBot extends TelegramLongPollingBot implements TelegramBotIn
     public void onUpdateReceived(Update update) {
         try {
             if (update.hasMessage() && update.getMessage().hasText()) {
-                //Извлекаем из объекта сообщение пользователя
                 Message message = update.getMessage();
                 String userMessage = message.getText();
-                //Достаем из inMess id чата пользователя
                 long chatId = message.getChatId();
-                //Получаем текст сообщения пользователя, отправляем в написанный нами обработчик
+
                 String response = messageHandling.parseMessage(userMessage, chatId);
-                //Создаем объект класса SendMessage - наш будущий ответ пользователю
+
                 SendMessage outMess = new SendMessage();
-                    //Добавляем в наше сообщение id чата, а также наш ответ
-                    outMess.setChatId(String.valueOf(chatId));
-                    outMess.setText(response);
-                    outMess.setReplyMarkup(createKeyboard());
-                    //Отправка в чат
-                    execute(outMess);
-                }
+                outMess.setChatId(String.valueOf(chatId));
+                outMess.setText(response);
+                outMess.setReplyMarkup(createKeyboard(chatId)); // Передаем chatId для определения состояния пользователя
+                execute(outMess);
+            }
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
@@ -84,24 +80,53 @@ public class TelegramBot extends TelegramLongPollingBot implements TelegramBotIn
     /**
      * Метод для создания клавиатуры в боте
      */
-    public ReplyKeyboardMarkup createKeyboard() {
+    public ReplyKeyboardMarkup createKeyboard(long chatId) {
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
-        // Создание ряда клавиш
-        KeyboardRow row1 = new KeyboardRow();
-        row1.add("suggest me list of books in a DETECTIVE genre");
-        row1.add("suggest me list of books in a ROMANTIC genre");
-        KeyboardRow row2 = new KeyboardRow();
-        row2.add("suggest me list of books in a FANTASY genre");
-        row2.add("suggest me list of books in a SCI-FI genre");
-        KeyboardRow row3 = new KeyboardRow();
-        row3.add("/chat");
-        row3.add("/stopchat");
-        keyboard.add(row1);
-        keyboard.add(row2);
-        keyboard.add(row3);
+
+        MessageHandling.UserState userState = messageHandling.getUserState(chatId);
+
+        if (userState == MessageHandling.UserState.PUZZLE_MODE) {
+            // Создание клавиатуры для режима головоломки
+            KeyboardRow row1 = new KeyboardRow();
+            row1.add("/gethint");
+            row1.add("/anotheriddle");
+            row1.add("/getanswer");
+
+            KeyboardRow row2 = new KeyboardRow();
+            row2.add("/restart");
+            row2.add("/stoppuzzle");
+            row2.add("/back");
+
+            keyboard.add(row1);
+            keyboard.add(row2);
+        }else {
+            // Создание клавиатуры для других режимов
+            KeyboardRow row1 = new KeyboardRow();
+            row1.add("/start");
+            row1.add("/help");
+            row1.add("/playpuzzle");
+
+            KeyboardRow row2 = new KeyboardRow();
+            row2.add("/vote");
+            row2.add("/revote");
+            row2.add("/voteresults");
+
+
+            KeyboardRow row3 = new KeyboardRow();
+            row3.add("/getread");
+            row3.add("/editbook");
+            row3.add("/removebook");
+            row3.add("/addbook");
+
+            keyboard.add(row1);
+            keyboard.add(row2);
+            keyboard.add(row3);
+        }
+
         // Установка клавиатуры
         keyboardMarkup.setKeyboard(keyboard);
         return keyboardMarkup;
     }
+
 }

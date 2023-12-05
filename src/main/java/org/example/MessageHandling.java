@@ -1,7 +1,6 @@
 package org.example;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDate;
+import java.util.*;
 
 enum BookInputStep {
     TITLE,
@@ -18,9 +17,59 @@ enum BookInputStep {
  */
 public class MessageHandling implements MessageHandlingInterface {
 
+    public enum UserState {
+        DEFAULT, PUZZLE_MODE, VOTE_MODE, BOOK_MODE, AUTHOR_BOOK_MODE, YEAR_BOOK_MODE, REMOVE_BOOK_MODE, EDIT_BOOK_MODE
+    }
+
+    /**
+     * Хранилище данных, необходимых для бота.
+     */
     private Storage storage;
 
+    /**
+     * Игра в головоломку.
+     */
     private PuzzleGame puzzleGame;
+
+    /**
+     * Модуль голосования за книги.
+     */
+    private BookVoting bookVoting;
+
+    /**
+     * Флаг, указывающий на наличие активного голосования.
+     */
+    private boolean votingInProgress = false;
+
+    /**
+     * День, когда заканчивается голосование.
+     */
+    private int VOTING_END_DAY = 6;
+
+    /**
+     * Множество чатов, в которых в данный момент идет голосование.
+     */
+    private Set<Long> activeVotingChats = new HashSet<>();
+
+    /**
+     * Проверяет, идет ли в данный момент голосование в указанном чате.
+     *
+     * @param chatId Идентификатор чата.
+     * @return {@code true}, если голосование идет, иначе {@code false}.
+     */
+    private boolean votingInProgressForChat(long chatId) {
+        return activeVotingChats.contains(chatId);
+    }
+
+    /**
+     * Добавляет чат в список активных голосований.
+     *
+     * @param chatId Идентификатор чата.
+     */
+    private void addVotingInProgressChat(long chatId) {
+        activeVotingChats.add(chatId);
+    }
+
 
     /**
      * Работа обработчика сообщений в режиме игры в загадки
@@ -55,25 +104,35 @@ public class MessageHandling implements MessageHandlingInterface {
      */
     private boolean editBookMode;
 
+    /**
+     * Работа обработчика сообщений в режиме голосования
+     */
+    private boolean voteMode;
+
 
     /**
      * Отслеживание текущего шага работы с книгой
      */
     private Map<Long, BookInputStep> bookInputSteps;
 
+
     /**
      * Собранные данные о книге
      */
-
     private Map<Long, String> bookData;
 
+    public Map<Long, UserState> userStates;
 
+    public UserState getUserState(long chatId) {
+        return userStates.getOrDefault(chatId, UserState.DEFAULT);
+    }
 
     /**
      * Конструктор класса MessageHandling. Инициализирует объекты Storage и PuzzleGame,
      * а также устанавливает начальное значение режима головоломки как false.
      */
     public MessageHandling() {
+        bookVoting = new BookVoting();
         storage = new Storage();
         puzzleGame = new PuzzleGame();
         puzzleMode = false;
@@ -82,9 +141,12 @@ public class MessageHandling implements MessageHandlingInterface {
         yearBookMode = false;
         removeBookMode = false;
         editBookMode = false;
+        voteMode = false;
+        userStates = new HashMap<>();
         bookInputSteps = new HashMap<>();
         bookData = new HashMap<>();
     }
+
 
     /**
      * Метод для обработки входящего текстового сообщения от пользователя.
@@ -93,7 +155,6 @@ public class MessageHandling implements MessageHandlingInterface {
      * @param chatId  Идентификатор чата пользователя.
      * @return Ответ на запрос пользователя в виде строки.
      */
-
     public String parseMessage(String textMsg, long chatId) {
         String response;
 
@@ -109,6 +170,8 @@ public class MessageHandling implements MessageHandlingInterface {
             response = handleRemoveBook(textMsg, chatId);
         }else if (editBookMode){
             response = handleEditBookMode(textMsg, chatId);
+        }else if (voteMode){
+            response = handleVoteMode(textMsg, chatId);
         }else
             response = handleDefaultMode(textMsg, chatId);
 
@@ -136,8 +199,35 @@ public class MessageHandling implements MessageHandlingInterface {
         } else if (textMsg.equals("/stoppuzzle")) {
             response = "Режим головоломки завершен.\n" + puzzleGame.getStatistics(chatId);;
             puzzleMode = false; // Выход из режима головоломки
-        } else {
+        }else if (textMsg.equals("/back")) {
+            // Обработка команды /back - возврат в главное меню
+            puzzleMode = false;  // Сброс режима головоломки
+            userStates.put(chatId, UserState.DEFAULT);  // Установка состояния пользователя в режим по умолчанию
+            response = "Вы вернулись в главное меню.";
+        }else {
             response = puzzleGame.checkAnswer(chatId, textMsg);
+        }
+        return response;
+    }
+
+
+    /**
+     * Обрабатывает ввод пользователя в режиме голосования
+     *
+     * @param textMsg Введенное пользователем сообщение.
+     * @param chatId  Идентификатор чата пользователя.
+     * @return Сообщение в ответ на ввод пользователя.
+     */
+    private String handleVoteMode(String textMsg, long chatId) {
+        String response;
+        if (voteMode) {
+            response = bookVoting.processUserVotes(textMsg, chatId);
+            if (response.equals("Спасибо за ваш голос!")) {
+                // Голосование завершено, устанавливаем voteMode в false
+                voteMode = false;
+            }
+        } else {
+            response = "Книги:";
         }
         return response;
     }
@@ -152,6 +242,8 @@ public class MessageHandling implements MessageHandlingInterface {
      */
     private String handleDefaultMode(String textMsg, long chatId) {
         String response;
+        LocalDate currentDate = LocalDate.now();
+        int currentDay = currentDate.getDayOfMonth();
         // Сравниваем текст пользователя с командами, на основе этого формируем ответ
         if (textMsg.equals("/start") || textMsg.equals("/help")) {
             response = "Приветствую, это литературный бот. Жми /get, чтобы получить случайную цитату. Жми /genre, чтобы перейти в раздел жанров книг.";
@@ -177,7 +269,7 @@ public class MessageHandling implements MessageHandlingInterface {
             response = "Введите название книги:";
 
 
-        } else   if (textMsg.equals("/editbook")) {
+        } else if (textMsg.equals("/editbook")) {
             // Переходим в режим редактирования книг
             editBookMode = true;
             bookInputSteps.put(chatId, BookInputStep.NUMBER);
@@ -227,11 +319,61 @@ public class MessageHandling implements MessageHandlingInterface {
 
         } else if (textMsg.equals("/playpuzzle")) {
             // Вход в режим головоломки
+            userStates.put(chatId, UserState.PUZZLE_MODE);
             puzzleMode = true;
             response = puzzleGame.startPuzzle(chatId);
 
+        } else if (textMsg.equals("/vote")) {
+            if (currentDay < VOTING_END_DAY) {
+                // Проверяем, не проводится ли уже голосование для данного пользователя
+                if (!votingInProgress || !votingInProgressForChat(chatId)) {
+                    // Если голосование ещё не начато для данного пользователя, устанавливаем флаг и отображаем список книг
+                    votingInProgress = true;
+                    voteMode = true;
+                    addVotingInProgressChat(chatId); // Добавляем текущий чат в список активных голосований
+                    response = bookVoting.showBookList(chatId);
+                } else {
+                    // Если голосование уже начато для данного пользователя, предлагаем вариант переголосования
+                    response = "Если вы пытаетесь проголосовать повторно, то этого сделать нельзя. Если вы хотите переголосовать, нажмите /revote";
+                }
+            } else {
+                if (votingInProgress)
+                    response = bookVoting.finishVoting();
+                else{
+                    response = "Лидера голосования нет";
+                }
+            }
 
-        }else {
+        } else if (textMsg.equals("/revote")) {
+            if (currentDay < VOTING_END_DAY) {
+                if (votingInProgressForChat(chatId)) {
+                    voteMode = true;
+                    bookVoting.cancelUserVotes(chatId);
+                    response = bookVoting.showBookList(chatId);
+                } else {
+                    // Если голосование ещё не начато для данного пользователя, предлагаем вариант голосования
+                    response = "Вы не можете использовать эту команду до использования /vote";
+                }
+            } else {
+                if (votingInProgress)
+                    response = bookVoting.finishVoting();
+                else{
+                    response = "Лидера голосования нет";
+                }
+            }
+
+        }else if (textMsg.equals("/voteresults")) {
+            if (currentDay < VOTING_END_DAY) {
+                response = bookVoting.getVotingStatistics();
+            } else {
+                if (votingInProgress)
+                    response = bookVoting.finishVoting();
+                else {
+                    response = "Лидера голосования нет";
+                }
+            }
+
+        } else {
             response = textMsg;
         }
         return response;
@@ -478,24 +620,24 @@ public class MessageHandling implements MessageHandlingInterface {
                     try {
                         bookData.put(chatId, bookData.get(chatId) + "\n" + textMsg.trim()); // Сохраняем год прочтения книги
                         String[] parts = bookData.get(chatId).split("\n");
-                            int bookNumber = Integer.parseInt(parts[0]);
-                            // Получаем новые данные книги
-                            String newTitle = parts[1];
-                            String newAuthor = parts[2];
-                            int newYear = Integer.parseInt(parts[3]);
+                        int bookNumber = Integer.parseInt(parts[0]);
+                        // Получаем новые данные книги
+                        String newTitle = parts[1];
+                        String newAuthor = parts[2];
+                        int newYear = Integer.parseInt(parts[3]);
                         // Получаем старые данные книги
                         ArrayList<String> readBooks = storage.getAllValues(chatId);
                         String[] oldBookParts = readBooks.get(bookNumber - 1).split("\n");
                         String oldTitle = oldBookParts[0];
                         String oldAuthor = oldBookParts[1];
                         int oldYear = Integer.parseInt(oldBookParts[2]);
-                                //Обновляем данные о книге в базе данных
-                                storage.editReadBook(oldTitle, oldAuthor, oldYear, newTitle, newAuthor, newYear, chatId);
-                                editBookMode = false;
-                                response = "Книга '" + oldTitle + "' успешно отредактирована в списке прочитанных!";
-                            // Сбрасываем состояние редактирования книги для данного чата
-                            bookInputSteps.remove(chatId);
-                            bookData.remove(chatId);
+                        //Обновляем данные о книге в базе данных
+                        storage.editReadBook(oldTitle, oldAuthor, oldYear, newTitle, newAuthor, newYear, chatId);
+                        editBookMode = false;
+                        response = "Книга '" + oldTitle + "' успешно отредактирована в списке прочитанных!";
+                        // Сбрасываем состояние редактирования книги для данного чата
+                        bookInputSteps.remove(chatId);
+                        bookData.remove(chatId);
                     } catch (NumberFormatException e) {
                         response = "Некорректный формат года прочтения. Пожалуйста, введите год цифрами.";
                     }
@@ -505,5 +647,9 @@ public class MessageHandling implements MessageHandlingInterface {
             }
         }
         return response;
+    }
+
+    public void setVotingEndDay(int votingEndDay) {
+        this.VOTING_END_DAY = votingEndDay;
     }
 }
