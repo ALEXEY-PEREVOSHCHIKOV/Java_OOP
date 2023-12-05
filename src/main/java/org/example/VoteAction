@@ -1,83 +1,84 @@
 package org.example;
-
 import java.util.*;
 
-public class BookVoting {
+/**
+ * Класс, представляющий систему голосования за книги.
+ */
+public class BookVoting implements BookVotingInterface{
 
-    private Map<Integer, Book> books;
+    /**
+     * Экземпляр класса, управляющего списком книг.
+     */
+    private TheBooks theBooks;
+
+    /**
+     * Map для хранения голосов пользователей по каждой книге.
+     */
     private Map<Long, List<Integer>> userVotes;
+
+    /**
+     * Map, определяющая режим голосования для каждого чата.
+     */
     private Map<Long, Boolean> votingModes;
 
+    /**
+     * Map для хранения количества голосов для каждой книги.
+     */
+    private Map<Integer, Integer> bookVotesCount; // Добавили для хранения количества голосов для каждой книги
+
+    /**
+     * Конструктор класса BookVoting. Инициализирует все необходимые структуры данных.
+     */
     public BookVoting() {
-        initializeBooks();
+        theBooks = new TheBooks();
         userVotes = new HashMap<>();
         votingModes = new HashMap<>();
+        bookVotesCount = new HashMap<>(); // Инициализируем мапу для хранения количества голосов
     }
 
-    private void initializeBooks() {
-        books = new HashMap<>();
-        books.put(1, new Book("Название1", "Автор1"));
-        books.put(2, new Book("Название2", "Автор2"));
-        books.put(3, new Book("Название3", "Автор3"));
-        books.put(4, new Book("Название4", "Автор4"));
-        books.put(5, new Book("Название5", "Автор5"));
-        books.put(6, new Book("Название6", "Автор6"));
-        books.put(7, new Book("Название7", "Автор7"));
-        books.put(8, new Book("Название8", "Автор8"));
-        books.put(9, new Book("Название9", "Автор9"));
-        books.put(10, new Book("Название10", "Автор10"));
-        books.put(11, new Book("Название11", "Автор11"));
-        books.put(12, new Book("Название12", "Автор12"));
-        books.put(13, new Book("Название13", "Автор13"));
-        books.put(14, new Book("Название14", "Автор14"));
-        books.put(15, new Book("Название15", "Автор15"));
-        books.put(16, new Book("Название16", "Автор16"));
-        books.put(17, new Book("Название17", "Автор17"));
-        books.put(18, new Book("Название18", "Автор18"));
-        books.put(19, new Book("Название19", "Автор19"));
-        books.put(20, new Book("Название20", "Автор20"));
-    }
 
-    public String startVoting(long chatId) {
-        StringBuilder response = new StringBuilder();
-        response.append("Желаете проголосовать за книгу месяца? (да/нет)\n");
-        // Добавьте обработку ответа пользователя (да/нет)
-        // Если ответ "да", вызовите метод showBookList(chatId) для отображения списка книг
-        // Если ответ "нет", верните соответствующее сообщение и завершите голосование
-        return response.toString();
-    }
-
+    /**
+     * Показывает список книг для голосования.
+     *
+     * @param chatId идентификатор чата.
+     * @return строка с перечислением книг для голосования.
+     */
     public String showBookList(long chatId) {
         StringBuilder response = new StringBuilder();
         response.append("Выберите 3 понравившиеся книги, отправив их номера последовательно:\n");
-
         int bookNumber = 1;
-        for (Map.Entry<Integer, Book> entry : books.entrySet()) {
-            response.append(bookNumber).append(". ").append(entry.getValue().toString()).append("\n");
+        for (int i = 0; i < theBooks.getSize(); i++) {
+            response.append(bookNumber).append(". ").append(theBooks.getBookByNumber(bookNumber).toString());
+            // Добавим количество голосов для текущей книги только при запросе результатов
+            if (votingModes.getOrDefault(chatId, false)) {
+                int votesCount = bookVotesCount.getOrDefault(bookNumber, 0);
+                response.append(" - ").append(votesCount).append(" голосов");
+            }
+            response.append("\n");
             bookNumber++;
         }
-
         return response.toString();
     }
 
+
+    /**
+     * Обрабатывает голоса пользователя.
+     *
+     * @param textMsg текстовое сообщение пользователя.
+     * @param chatId  идентификатор чата.
+     * @return ответ на голосование пользователя.
+     */
     public String processUserVotes(String textMsg, long chatId) {
         List<Integer> votes = userVotes.computeIfAbsent(chatId, k -> new ArrayList<>());
-
-        if (textMsg.equalsIgnoreCase("да")) {
-            return showBookList(chatId);
-        } else if (textMsg.equalsIgnoreCase("нет")) {
-            return "Голосование завершено. Спасибо!";
-        }
-
         try {
             int selectedBookNumber = Integer.parseInt(textMsg);
-            if (selectedBookNumber >= 1 && selectedBookNumber <= books.size()) {
+            if (selectedBookNumber >= 1 && selectedBookNumber <= theBooks.getSize()) {
                 if (!votes.contains(selectedBookNumber)) {
                     votes.add(selectedBookNumber);
+                    // Увеличиваем количество голосов для выбранной книги
+                    bookVotesCount.put(selectedBookNumber, bookVotesCount.getOrDefault(selectedBookNumber, 0) + 1);
                     if (votes.size() == 3) {
-                        String votingResult = getVotingResult();
-                        userVotes.remove(chatId);
-                        return "Спасибо за ваш голос!\n" + votingResult;
+                        return "Спасибо за ваш голос!";
                     } else {
                         return "Вы выбрали книгу номер " + selectedBookNumber + ". Выберите еще " + (3 - votes.size()) + " книг(и).";
                     }
@@ -85,43 +86,21 @@ public class BookVoting {
                     return "Вы уже выбрали эту книгу. Выберите другую.";
                 }
             } else {
-                return "Неверный номер книги. Выберите номер от 1 до " + books.size() + ".";
+                return "Неверный номер книги. Выберите номер от 1 до " + theBooks.getSize() + ".";
             }
         } catch (NumberFormatException e) {
-            return "Введите число от 1 до " + books.size() + ".";
+            return "Введите число от 1 до " + theBooks.getSize() + ".";
         }
     }
 
-    private List<Book> getTop3Books() {
-        List<Book> top3Books = new ArrayList<>();
 
-        // Получаем топ-3 книги из результатов голосования
-        List<Map.Entry<Integer, Integer>> sortedVotes = getSortedVotes();
-        for (int i = 0; i < Math.min(3, sortedVotes.size()); i++) {
-            int bookNumber = sortedVotes.get(i).getKey();
-            top3Books.add(books.get(bookNumber));
-        }
-
-        return top3Books;
-    }
-
-    public String getVotingResult() {
-        List<Book> top3Books = getTop3Books();
-
-        // Формируем строку с результатами голосования
-        StringBuilder result = new StringBuilder("Результаты голосования:\n");
-        int place = 1;
-        for (Book book : top3Books) {
-            result.append(place).append(" ").append(book).append("\n");
-            place++;
-        }
-
-        return result.toString();
-    }
-
+    /**
+     * Получает отсортированный список голосов за книги в порядке убывания.
+     *
+     * @return отсортированный список голосов.
+     */
     private List<Map.Entry<Integer, Integer>> getSortedVotes() {
         Map<Integer, Integer> bookVotes = new HashMap<>();
-
         // Подсчитываем голоса для каждой книги
         for (List<Integer> userVotes : userVotes.values()) {
             for (int i = 0; i < userVotes.size(); i++) {
@@ -137,18 +116,85 @@ public class BookVoting {
         return sortedVotes;
     }
 
-    private static class Book {
-        private String title;
-        private String author;
 
-        public Book(String title, String author) {
-            this.title = title;
-            this.author = author;
+
+    /**
+     * Завершает голосование и возвращает результат.
+     *
+     * @return результат голосования.
+     */
+    public String finishVoting() {
+        StringBuilder result = new StringBuilder("Голосование окончено.Итоги голосования:\n");
+        // Получаем топ-1 книгу с наибольшим числом голосов
+        List<TheBooks.Book> topBook = getTopBook();
+        result.append("Книга с наибольшим числом голосов:\n");
+        for (TheBooks.Book book : topBook) {
+            result.append(book).append("\n");
         }
+        result.append("Вы можете присоединиться к нам и начать читать вместе!\n");
+        return result.toString();
+    }
 
-        @Override
-        public String toString() {
-            return title + " \n" + author;
+
+    /**
+     * Получает топовую книгу с наибольшим числом голосов.
+     *
+     * @return список топовых книг.
+     */
+    private List<TheBooks.Book> getTopBook() {
+        List<Map.Entry<Integer, Integer>> sortedVotes = getSortedVotes();
+        // Получаем максимальное количество голосов
+        int maxVotes = sortedVotes.get(0).getValue();
+        // Фильтруем книги с максимальным количеством голосов
+        List<Map.Entry<Integer, Integer>> topBooks = sortedVotes.stream()
+                .filter(entry -> entry.getValue() == maxVotes)
+                .toList();
+        // Получаем первую книгу среди книг с одинаковым максимальным количеством голосов
+        int topBookNumber = topBooks.get(0).getKey();
+        return Collections.singletonList(theBooks.getBookByNumber(topBookNumber));
+    }
+
+
+    /**
+     * Получает статистику голосования.
+     *
+     * @return статистика голосования.
+     */
+    public String getVotingStatistics() {
+        StringBuilder statistics = new StringBuilder();
+        int bookNumber = 1;
+
+        for (int i = 0; i < theBooks.getSize(); i++) {
+            statistics.append(bookNumber).append(" ").append(theBooks.getBookByNumber(bookNumber).toString());
+
+            // Добавим количество голосов для текущей книги
+            int votesCount = bookVotesCount.getOrDefault(bookNumber, 0);
+            statistics.append(" - ").append(votesCount).append(" голосов");
+
+            statistics.append("\n");
+            bookNumber++;
+        }
+        return statistics.toString();
+    }
+
+
+    /**
+     * Отменяет голоса пользователя.
+     *
+     * @param chatId идентификатор чата пользователя.
+     */
+    public void cancelUserVotes(long chatId) {
+        if (userVotes.containsKey(chatId)) {
+            List<Integer> votes = userVotes.get(chatId);
+            for (int selectedBookNumber : votes) {
+                // Уменьшаем количество голосов для выбранной книги
+                int currentVotesCount = bookVotesCount.getOrDefault(selectedBookNumber, 0);
+                if (currentVotesCount > 0) {
+                    bookVotesCount.put(selectedBookNumber, currentVotesCount - 1);
+                }
+            }
+            userVotes.remove(chatId);
         }
     }
 }
+
