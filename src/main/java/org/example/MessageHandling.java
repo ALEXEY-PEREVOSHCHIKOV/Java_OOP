@@ -12,6 +12,7 @@ enum BookInputStep {
     YEAR
 }
 
+
 /**
  * Класс для обработки сообщений пользователя
  */
@@ -44,7 +45,7 @@ public class MessageHandling implements MessageHandlingInterface {
     /**
      * День, когда заканчивается голосование.
      */
-    private int VOTING_END_DAY = 6;
+    private int VOTING_END_DAY = 5;
 
     /**
      * Множество чатов, в которых в данный момент идет голосование.
@@ -121,7 +122,9 @@ public class MessageHandling implements MessageHandlingInterface {
      */
     private Map<Long, String> bookData;
 
+
     public Map<Long, UserState> userStates;
+
 
     public UserState getUserState(long chatId) {
         return userStates.getOrDefault(chatId, UserState.DEFAULT);
@@ -221,11 +224,11 @@ public class MessageHandling implements MessageHandlingInterface {
     private String handleVoteMode(String textMsg, long chatId) {
         String response;
         if (voteMode) {
-            response = bookVoting.processUserVotes(textMsg, chatId);
-            if (response.equals("Спасибо за ваш голос!")) {
-                // Голосование завершено, устанавливаем voteMode в false
-                voteMode = false;
-            }
+                response = bookVoting.processUserVotes(textMsg, chatId);
+                if (response.equals("Спасибо за ваш голос!")) {
+                    // Голосование завершено, устанавливаем voteMode в false
+                    voteMode = false;
+                }
         } else {
             response = "Книги:";
         }
@@ -319,33 +322,32 @@ public class MessageHandling implements MessageHandlingInterface {
 
         } else if (textMsg.equals("/playpuzzle")) {
             // Вход в режим головоломки
-            userStates.put(chatId, UserState.PUZZLE_MODE);
             puzzleMode = true;
             response = puzzleGame.startPuzzle(chatId);
 
         } else if (textMsg.equals("/vote")) {
-            if (currentDay < VOTING_END_DAY) {
+            if (currentDay <= VOTING_END_DAY) {
                 // Проверяем, не проводится ли уже голосование для данного пользователя
                 if (!votingInProgress || !votingInProgressForChat(chatId)) {
                     // Если голосование ещё не начато для данного пользователя, устанавливаем флаг и отображаем список книг
                     votingInProgress = true;
                     voteMode = true;
                     addVotingInProgressChat(chatId); // Добавляем текущий чат в список активных голосований
-                    response = bookVoting.showBookList(chatId);
+                    response = " Здравствуйте, добро пожаловать на ежемесячное голосование за “книгу месяца”, которое проводится с 1 по 5 число. Вам предлагается на выбор 10 книг.\n"+bookVoting.showBookList(chatId);
                 } else {
                     // Если голосование уже начато для данного пользователя, предлагаем вариант переголосования
                     response = "Если вы пытаетесь проголосовать повторно, то этого сделать нельзя. Если вы хотите переголосовать, нажмите /revote";
                 }
             } else {
                 if (votingInProgress)
-                    response = bookVoting.finishVoting();
+                response = bookVoting.finishVoting();
                 else{
-                    response = "Лидера голосования нет";
+                response = "Лидера голосования нет";
                 }
             }
 
         } else if (textMsg.equals("/revote")) {
-            if (currentDay < VOTING_END_DAY) {
+            if (currentDay <= VOTING_END_DAY) {
                 if (votingInProgressForChat(chatId)) {
                     voteMode = true;
                     bookVoting.cancelUserVotes(chatId);
@@ -363,7 +365,7 @@ public class MessageHandling implements MessageHandlingInterface {
             }
 
         }else if (textMsg.equals("/voteresults")) {
-            if (currentDay < VOTING_END_DAY) {
+            if (currentDay <= VOTING_END_DAY) {
                 response = bookVoting.getVotingStatistics();
             } else {
                 if (votingInProgress)
@@ -649,7 +651,12 @@ public class MessageHandling implements MessageHandlingInterface {
         return response;
     }
 
+    /**
+     * устанавливает день окончания голосования
+     */
     public void setVotingEndDay(int votingEndDay) {
         this.VOTING_END_DAY = votingEndDay;
     }
+
 }
+
