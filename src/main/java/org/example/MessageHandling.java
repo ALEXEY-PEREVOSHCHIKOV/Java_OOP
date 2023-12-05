@@ -21,6 +21,7 @@ public class MessageHandling implements MessageHandlingInterface {
     private Storage storage;
 
     private PuzzleGame puzzleGame;
+    private VoteAction voteAction;
 
     /**
      * Работа обработчика сообщений в режиме игры в загадки
@@ -55,6 +56,9 @@ public class MessageHandling implements MessageHandlingInterface {
      */
     private boolean editBookMode;
 
+    private boolean voteMode;
+
+
 
     /**
      * Отслеживание текущего шага работы с книгой
@@ -74,6 +78,7 @@ public class MessageHandling implements MessageHandlingInterface {
      * а также устанавливает начальное значение режима головоломки как false.
      */
     public MessageHandling() {
+        voteAction = new VoteAction();
         storage = new Storage();
         puzzleGame = new PuzzleGame();
         puzzleMode = false;
@@ -82,6 +87,8 @@ public class MessageHandling implements MessageHandlingInterface {
         yearBookMode = false;
         removeBookMode = false;
         editBookMode = false;
+        voteMode = false;
+
         bookInputSteps = new HashMap<>();
         bookData = new HashMap<>();
     }
@@ -109,6 +116,8 @@ public class MessageHandling implements MessageHandlingInterface {
             response = handleRemoveBook(textMsg, chatId);
         }else if (editBookMode){
             response = handleEditBookMode(textMsg, chatId);
+        }else if (voteMode){
+            response = handleVoteMode(textMsg, chatId);
         }else
             response = handleDefaultMode(textMsg, chatId);
 
@@ -136,11 +145,37 @@ public class MessageHandling implements MessageHandlingInterface {
         } else if (textMsg.equals("/stoppuzzle")) {
             response = "Режим головоломки завершен.\n" + puzzleGame.getStatistics(chatId);;
             puzzleMode = false; // Выход из режима головоломки
-        } else {
+        }else {
             response = puzzleGame.checkAnswer(chatId, textMsg);
         }
         return response;
     }
+
+    private String handleVoteMode(String textMsg, long chatId) {
+        String response;
+
+        if (textMsg.equalsIgnoreCase("/vote")) {
+            voteMode = true;
+            response = voteAction.showBookList(chatId);
+        } else if (voteMode) {
+            // Вызывайте processUserVotes для обработки ввода пользователя в режиме голосования
+            response = voteAction.processUserVotes(textMsg, chatId);
+            if (!voteMode) {
+                // Если голосование завершено, добавьте результаты голосования к ответу
+                response += "\n" + voteAction.getVotingResult();
+            }
+        } else {
+            response = "Книги:";
+        }
+
+        return response;
+    }
+
+
+
+
+
+
 
 
     /**
@@ -231,7 +266,10 @@ public class MessageHandling implements MessageHandlingInterface {
             response = puzzleGame.startPuzzle(chatId);
 
 
-        }else {
+        } else if (textMsg.equals("/vote")){
+            voteMode = true;
+            response = voteAction.showBookList(chatId);
+        } else {
             response = textMsg;
         }
         return response;
