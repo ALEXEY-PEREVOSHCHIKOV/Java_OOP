@@ -5,6 +5,8 @@ import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Mock;
+
+import java.time.LocalDateTime;
 import java.util.*;
 import static org.mockito.Mockito.*;
 
@@ -13,6 +15,9 @@ public class BotTest implements BotTestInterface {
     private long ChatId;
 
     private MessageHandling bot;
+
+
+    private TheBooks theBooks;
 
     private PuzzleGame puzzleGame;
 
@@ -28,6 +33,7 @@ public class BotTest implements BotTestInterface {
     public void setUp() {
         ChatId = 12345L;
         bot = new MessageHandling();
+        theBooks = new TheBooks();
         MockitoAnnotations.initMocks(this);
         puzzles = new HashMap<>();
         puzzleGame = new PuzzleGame();
@@ -445,6 +451,8 @@ public class BotTest implements BotTestInterface {
      */
     @Test
     public void voteCommandTest() {
+        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
+        bot.setCurrentDate(newDate);
         String response = bot.parseMessage("/vote", ChatId);
         Assert.assertEquals(" Здравствуйте, добро пожаловать на ежемесячное голосование за “книгу месяца”, которое проводится с 1 по 5 число. Вам предлагается на выбор 10 книг.\n" +
                 " Пожалуйста, выберите 3 книги из списка популярных книг этого месяца ниже, которые вам нравятся больше всего, это поможет нам определить победителя. После этого сообщения отправьте номер первой наиболее понравившейся книги.\n" +
@@ -465,6 +473,8 @@ public class BotTest implements BotTestInterface {
      */
     @Test
     public void voteAfterCommandTest() {
+        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
+        bot.setCurrentDate(newDate);
         bot.parseMessage("/vote", ChatId);
         String response = bot.parseMessage("3", ChatId);
         Assert.assertEquals("Вы выбрали книгу номер 3. Выберите еще 2 книг(и).", response);
@@ -479,6 +489,8 @@ public class BotTest implements BotTestInterface {
      */
     @Test
     public void voteAfterWrongEnterCommandTest() {
+        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
+        bot.setCurrentDate(newDate);
         bot.parseMessage("/vote", ChatId);
         String response = bot.parseMessage("3", ChatId);
         Assert.assertEquals("Вы выбрали книгу номер 3. Выберите еще 2 книг(и).", response);
@@ -501,6 +513,8 @@ public class BotTest implements BotTestInterface {
      */
     @Test
     public void voteResultsCommandTest() {
+        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
+        bot.setCurrentDate(newDate);
         String response = bot.parseMessage("/voteresults", ChatId);
         Assert.assertTrue(response.startsWith("Статистика голосования:\n" + "\"KGBT+\" - Александр Пелевин - "));
     }
@@ -510,6 +524,8 @@ public class BotTest implements BotTestInterface {
      */
     @Test
     public void revoteWrongCommandTest() {
+        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
+        bot.setCurrentDate(newDate);
         String response = bot.parseMessage("/revote", ChatId);
         Assert.assertEquals("Вы не можете использовать эту команду до использования /vote", response);
     }
@@ -519,6 +535,8 @@ public class BotTest implements BotTestInterface {
      */
     @Test
     public void revoteCompleteCommandTest() {
+        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
+        bot.setCurrentDate(newDate);
         bot.parseMessage("/vote", ChatId);
         bot.parseMessage("3", ChatId);
         bot.parseMessage("2", ChatId);
@@ -583,6 +601,8 @@ public class BotTest implements BotTestInterface {
      */
     @Test
     public void testEndOfVoting() {
+        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
+        bot.setCurrentDate(newDate);
         bot.parseMessage("/vote", ChatId);
         bot.parseMessage("3", ChatId);
         bot.parseMessage("2", ChatId);
