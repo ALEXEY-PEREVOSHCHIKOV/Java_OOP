@@ -12,6 +12,7 @@ enum BookInputStep {
     YEAR
 }
 
+
 /**
  * Класс для обработки сообщений пользователя
  */
@@ -40,7 +41,7 @@ public class MessageHandling implements MessageHandlingInterface {
     /**
      * День, когда заканчивается голосование.
      */
-    private int VOTING_END_DAY = 6;
+    private int VOTING_END_DAY = 5;
 
     /**
      * Множество чатов, в которых в данный момент идет голосование.
@@ -309,14 +310,14 @@ public class MessageHandling implements MessageHandlingInterface {
             response = puzzleGame.startPuzzle(chatId);
 
         } else if (textMsg.equals("/vote")) {
-            if (currentDay < VOTING_END_DAY) {
+            if (currentDay <= VOTING_END_DAY) {
                 // Проверяем, не проводится ли уже голосование для данного пользователя
                 if (!votingInProgress || !votingInProgressForChat(chatId)) {
                     // Если голосование ещё не начато для данного пользователя, устанавливаем флаг и отображаем список книг
                     votingInProgress = true;
                     voteMode = true;
                     addVotingInProgressChat(chatId); // Добавляем текущий чат в список активных голосований
-                    response = bookVoting.showBookList(chatId);
+                    response = " Здравствуйте, добро пожаловать на ежемесячное голосование за “книгу месяца”, которое проводится с 1 по 5 число. Вам предлагается на выбор 10 книг.\n"+bookVoting.showBookList(chatId);
                 } else {
                     // Если голосование уже начато для данного пользователя, предлагаем вариант переголосования
                     response = "Если вы пытаетесь проголосовать повторно, то этого сделать нельзя. Если вы хотите переголосовать, нажмите /revote";
@@ -330,7 +331,7 @@ public class MessageHandling implements MessageHandlingInterface {
             }
 
         } else if (textMsg.equals("/revote")) {
-            if (currentDay < VOTING_END_DAY) {
+            if (currentDay <= VOTING_END_DAY) {
                 if (votingInProgressForChat(chatId)) {
                     voteMode = true;
                     bookVoting.cancelUserVotes(chatId);
@@ -348,7 +349,7 @@ public class MessageHandling implements MessageHandlingInterface {
             }
 
         }else if (textMsg.equals("/voteresults")) {
-            if (currentDay < VOTING_END_DAY) {
+            if (currentDay <= VOTING_END_DAY) {
                 response = bookVoting.getVotingStatistics();
             } else {
                 if (votingInProgress)
@@ -633,7 +634,10 @@ public class MessageHandling implements MessageHandlingInterface {
         }
         return response;
     }
-
+    
+    /**
+     * устанавливает день окончания голосования
+     */
     public void setVotingEndDay(int votingEndDay) {
         this.VOTING_END_DAY = votingEndDay;
     }
