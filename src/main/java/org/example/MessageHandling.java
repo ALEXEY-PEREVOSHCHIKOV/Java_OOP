@@ -18,6 +18,10 @@ enum BookInputStep {
  */
 public class MessageHandling implements MessageHandlingInterface {
 
+    public enum UserState {
+        DEFAULT, PUZZLE_MODE, VOTE_MODE, BOOK_MODE, AUTHOR_BOOK_MODE, YEAR_BOOK_MODE, REMOVE_BOOK_MODE, EDIT_BOOK_MODE
+    }
+
     /**
      * Хранилище данных, необходимых для бота.
      */
@@ -119,6 +123,13 @@ public class MessageHandling implements MessageHandlingInterface {
     private Map<Long, String> bookData;
 
 
+    public Map<Long, UserState> userStates;
+
+
+    public UserState getUserState(long chatId) {
+        return userStates.getOrDefault(chatId, UserState.DEFAULT);
+    }
+
     /**
      * Конструктор класса MessageHandling. Инициализирует объекты Storage и PuzzleGame,
      * а также устанавливает начальное значение режима головоломки как false.
@@ -134,7 +145,7 @@ public class MessageHandling implements MessageHandlingInterface {
         removeBookMode = false;
         editBookMode = false;
         voteMode = false;
-
+        userStates = new HashMap<>();
         bookInputSteps = new HashMap<>();
         bookData = new HashMap<>();
     }
@@ -191,6 +202,11 @@ public class MessageHandling implements MessageHandlingInterface {
         } else if (textMsg.equals("/stoppuzzle")) {
             response = "Режим головоломки завершен.\n" + puzzleGame.getStatistics(chatId);;
             puzzleMode = false; // Выход из режима головоломки
+        }else if (textMsg.equals("/back")) {
+            // Обработка команды /back - возврат в главное меню
+            puzzleMode = false;  // Сброс режима головоломки
+            userStates.put(chatId, UserState.DEFAULT);  // Установка состояния пользователя в режим по умолчанию
+            response = "Вы вернулись в главное меню.";
         }else {
             response = puzzleGame.checkAnswer(chatId, textMsg);
         }
@@ -634,11 +650,13 @@ public class MessageHandling implements MessageHandlingInterface {
         }
         return response;
     }
-    
+
     /**
      * устанавливает день окончания голосования
      */
     public void setVotingEndDay(int votingEndDay) {
         this.VOTING_END_DAY = votingEndDay;
     }
+
 }
+
