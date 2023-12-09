@@ -1,5 +1,5 @@
 package org.example;
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 import java.util.*;
 
 enum BookInputStep {
@@ -45,7 +45,7 @@ public class MessageHandling implements MessageHandlingInterface {
     /**
      * День, когда заканчивается голосование.
      */
-    private int VOTING_END_DAY = 4;
+    private int VOTING_END_DAY = 5;
 
     /**
      * Множество чатов, в которых в данный момент идет голосование.
@@ -125,7 +125,7 @@ public class MessageHandling implements MessageHandlingInterface {
 
     public Map<Long, UserState> userStates;
 
-    private LocalDateTime currentDate;
+    private DateTimeProvider dateTimeProvider;
 
 
     public UserState getUserState(long chatId) {
@@ -150,7 +150,24 @@ public class MessageHandling implements MessageHandlingInterface {
         userStates = new HashMap<>();
         bookInputSteps = new HashMap<>();
         bookData = new HashMap<>();
-        currentDate = LocalDateTime.now();
+    }
+
+
+        public MessageHandling(DateTimeProvider dateTimeProvider) {
+        this.dateTimeProvider = dateTimeProvider != null ? dateTimeProvider : new DefaultDateTimeProvider();
+        bookVoting = new BookVoting(dateTimeProvider);
+        storage = new Storage();
+        puzzleGame = new PuzzleGame();
+        puzzleMode = false;
+        bookMode = false;
+        authorBookMode = false;
+        yearBookMode = false;
+        removeBookMode = false;
+        editBookMode = false;
+        voteMode = false;
+        userStates = new HashMap<>();
+        bookInputSteps = new HashMap<>();
+        bookData = new HashMap<>();
     }
 
 
@@ -248,6 +265,7 @@ public class MessageHandling implements MessageHandlingInterface {
      */
     private String handleDefaultMode(String textMsg, long chatId) {
         String response;
+        LocalDate currentDate = LocalDate.now();
         int currentDay = currentDate.getDayOfMonth();
         // Сравниваем текст пользователя с командами, на основе этого формируем ответ
         if (textMsg.equals("/start") || textMsg.equals("/help")) {
@@ -394,6 +412,7 @@ public class MessageHandling implements MessageHandlingInterface {
      */
     private String handleBookMode(String textMsg, long chatId) {
         String response;
+
 
         // Проверяем текущий шаг ввода для данного чата
         BookInputStep currentStep = bookInputSteps.getOrDefault(chatId, BookInputStep.TITLE);
@@ -660,10 +679,5 @@ public class MessageHandling implements MessageHandlingInterface {
     public void setVotingEndDay(int votingEndDay) {
         this.VOTING_END_DAY = votingEndDay;
     }
-
-    public void setCurrentDate(LocalDateTime currentDate) {
-        this.currentDate = currentDate;
-    }
-
 }
 
