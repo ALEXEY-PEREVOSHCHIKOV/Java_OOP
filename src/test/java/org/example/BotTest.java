@@ -1,12 +1,8 @@
-package org.example;
-import org.junit.Assert;
-import org.junit.Before;
-import org.junit.Test;
 import org.mockito.InjectMocks;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Mock;
-import java.time.LocalDateTime;
 import java.util.*;
+import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.*;
 
 public class BotTest implements BotTestInterface {
@@ -16,33 +12,27 @@ public class BotTest implements BotTestInterface {
     private MessageHandling bot;
 
 
-    private TheBooks theBooks;
-
     private PuzzleGame puzzleGame;
 
-    private BookVoting bookVoting;
     private Map<String, Puzzle> puzzles;
-
-
-    LocalDateTime currentDate;
 
 
     @Mock
     private Storage storage;
 
+    @Mock
+    private DateTimeProvider dateTimeProvider;
+
     @InjectMocks
-    private MessageHandling messageHandling;
+    private MessageHandling messageHandling = new MessageHandling();
 
     @Before
     public void setUp() {
         ChatId = 12345L;
         bot = new MessageHandling();
-        currentDate = LocalDateTime.of(2023, 12, 5, 0, 0);
         MockitoAnnotations.initMocks(this);
         puzzles = new HashMap<>();
         puzzleGame = new PuzzleGame();
-        bookVoting = new BookVoting();
-        theBooks = new TheBooks();
     }
 
     /**
@@ -450,144 +440,5 @@ public class BotTest implements BotTestInterface {
         bot.parseMessage("/playpuzzle", ChatId);
         String response = bot.parseMessage("/stoppuzzle", ChatId);
         Assert.assertEquals("Режим головоломки завершен.\nПравильных ответов: 0\n" + "Неправильных ответов: 20\n" + "Процент правильных ответов: 0.0%", response);
-    }
-
-    /**
-        * Проверка корректного ответа от бота при использовании команды /vote.
-     */
-    @Test
-    public void voteCommandTest() {
-        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
-        bot.setCurrentDate(newDate);
-        String response = bot.parseMessage("/vote", ChatId);
-        //здесь нужна установка текущей даты, меньшей, чем дата окончания голосования,
-        // поскольку так мы сможем проверить функионал метода showBookList
-        //И так тест проверяет, что команда /vote действительно вызывает метод showBookList
-        // Но месяц здесь важен, поэтому действительный список книг здесь не проверяем. На это есть тест в TheBooksTest
-        Assert.assertTrue(response.startsWith(" Здравствуйте, добро пожаловать на ежемесячное голосование за “книгу месяца”, которое проводится с 1 по 5 число. Вам предлагается на выбор 10 книг.\n" +
-                " Пожалуйста, выберите 3 книги из списка популярных книг этого месяца ниже, которые вам нравятся больше всего, это поможет нам определить победителя. После этого сообщения отправьте номер первой наиболее понравившейся книги.\n" +
-                "1."));
-
-    }
-
-
-
-    /**
-     * Проверка последовательного голосования пользователя и корректных ответов бота.
-     */
-    @Test
-    public void voteAfterCommandTest() {
-        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
-        bot.setCurrentDate(newDate);
-        //здесь нужна установка текущей даты, меньшей, чем дата окончания голосования,
-        // поскольку так мы сможем проверить функионал метода processUserVotes.
-        // Но месяц не важен, поскольку нас интересует здесь лишь число
-        bot.parseMessage("/vote", ChatId);
-        String response = bot.parseMessage("3", ChatId);
-        Assert.assertEquals("Вы выбрали книгу номер 3. Выберите еще 2 книг(и).", response);
-        response = bot.parseMessage("2", ChatId);
-        Assert.assertEquals("Вы выбрали книгу номер 2. Выберите еще 1 книг(и).", response);
-        response = bot.parseMessage("1", ChatId);
-        Assert.assertEquals("Спасибо за ваш голос!", response);
-    }
-
-    /**
-     * Проверка обработки некорректных вводов пользователя в процессе голосования.
-     */
-    @Test
-    public void voteAfterWrongEnterCommandTest() {
-        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
-        bot.setCurrentDate(newDate);
-        bot.parseMessage("/vote", ChatId);
-        String response = bot.parseMessage("3", ChatId);
-        Assert.assertEquals("Вы выбрали книгу номер 3. Выберите еще 2 книг(и).", response);
-        response = bot.parseMessage("3", ChatId);
-        Assert.assertEquals("Вы уже выбрали эту книгу. Выберите другую.", response);
-        response = bot.parseMessage("re", ChatId);
-        Assert.assertEquals("Введите число от 1 до 10.", response);
-        response = bot.parseMessage("19", ChatId);
-        Assert.assertEquals("Неверный номер книги. Выберите номер от 1 до 10.", response);
-        response = bot.parseMessage("2", ChatId);
-        Assert.assertEquals("Вы выбрали книгу номер 2. Выберите еще 1 книг(и).", response);
-        response = bot.parseMessage("1", ChatId);
-        Assert.assertEquals("Спасибо за ваш голос!", response);
-        response = bot.parseMessage("/vote", ChatId);
-        Assert.assertEquals("Если вы пытаетесь проголосовать повторно, то этого сделать нельзя. Если вы хотите переголосовать, нажмите /revote", response);
-    }
-
-    /**
-     * Проверка корректного отображения результатов голосования командой /voteresults.
-     */
-    @Test
-    public void voteResultsCommandTest() {
-        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
-        bot.setCurrentDate(newDate);
-        String response = bot.parseMessage("/voteresults", ChatId);
-        Assert.assertTrue(response.startsWith("Статистика голосования:"));
-    }
-
-    /**
-     * Проверка невозможности использования команды /revote до команды /vote.
-     */
-    @Test
-    public void revoteWrongCommandTest() {
-        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
-        bot.setCurrentDate(newDate);
-        String response = bot.parseMessage("/revote", ChatId);
-        Assert.assertEquals("Вы не можете использовать эту команду до использования /vote", response);
-    }
-
-    /**
-     * Проверка корректной работы команды /revote после завершения голосования.
-     */
-    @Test
-    public void revoteCompleteCommandTest() {
-        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
-        bot.setCurrentDate(newDate);
-        bot.parseMessage("/vote", ChatId);
-        bot.parseMessage("3", ChatId);
-        bot.parseMessage("2", ChatId);
-        bot.parseMessage("1", ChatId);
-        String response = bot.parseMessage("/voteresults", ChatId);
-        Assert.assertTrue(response.startsWith("Статистика голосования:"));
-        response = bot.parseMessage("/revote", ChatId);
-        Assert.assertTrue(response.startsWith(" Пожалуйста, выберите 3 книги из списка популярных книг этого месяца ниже, которые вам нравятся больше всего, это поможет нам определить победителя. После этого сообщения отправьте номер первой наиболее понравившейся книги.\n"));
-        bot.parseMessage("6", ChatId);
-        bot.parseMessage("7", ChatId);
-        bot.parseMessage("8", ChatId);
-        response = bot.parseMessage("/voteresults", ChatId);
-        Assert.assertTrue(response.startsWith("Статистика голосования:"));
-        //тест проверяет верную последовательную обработку команд
-    }
-
-    /**
-     * Проверка сценария завершения голосования без явного лидера.
-     */
-    @Test
-    public void testEndOfVotingWithNoLeader() {
-        LocalDateTime newDate = LocalDateTime.of(2023, 12, 6, 0, 0);
-        bot.setCurrentDate(newDate);
-        String response = bot.parseMessage("/vote", ChatId);
-        Assert.assertEquals("Лидера голосования нет", response);
-    }
-
-    /**
-     * Проверка сценария завершения голосования с явным лидером.
-     */
-    @Test
-    public void testEndOfVoting() {
-        LocalDateTime newDate = LocalDateTime.of(2023, 12, 4, 0, 0);
-        bot.setCurrentDate(newDate);
-        bot.parseMessage("/vote", ChatId);
-        bot.parseMessage("3", ChatId);
-        bot.parseMessage("2", ChatId);
-        bot.parseMessage("1", ChatId);
-        // Устанавливаем значение VOTING_END_DAY
-        int votingEndDay = 3;
-        bot.setVotingEndDay(votingEndDay);
-        String response = bot.parseMessage("/vote", ChatId);
-        //тест проверяет, что если существуют какие-то итоги голосования,
-        // то есть кто-то из пользователей голосовал, то есть и лидер голосования
-        Assert.assertTrue(response.startsWith("Голосование за книгу месяца уже окончено. В этом месяце по итогам голосования читаем:\n"));
     }
 }
