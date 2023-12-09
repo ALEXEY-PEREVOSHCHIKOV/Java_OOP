@@ -1,46 +1,44 @@
 package org.example;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-
 /**
  * Класс, представляющий коллекцию книг и предоставляющий методы для работы с ней.
  */
-public class TheBooks implements BooksInterface {
+public class TheBooks{
 
-    /**
-     * Текущий месяц.
-     */
-    private int currentMonth;
-
-    /**
-     * Текущая десятка книг.
-     */
-    private int currentSet;
 
     /**
      * Список книг в коллекции.
      */
     private List<Book> books;
 
-    /**
-     * Текущая дата.
-     */
-    private LocalDateTime currentDate;
-
+    private DateTimeProvider dateTimeProvider;
 
     /**
      * Конструктор класса, инициализирующий коллекцию книг.
      */
     public TheBooks() {
-        currentDate = LocalDateTime.now();
-        updateCurrentMonth();
-        currentSet = 0;
-        updateCurrentSet();  // Добавлен вызов обновления десятки
-        initializeBooks(allBooks);
+        // Вызываем метод setDateTimeProvider с текущим временем по умолчанию
+        setDateTimeProvider(new DefaultDateTimeProvider());
+        initializeBooks(allBooks, dateTimeProvider.getCurrentDateTime());
     }
+
+
+    // Устанавливаем DateTimeProvider
+    private void setDateTimeProvider(DateTimeProvider dateTimeProvider) {
+        this.dateTimeProvider = dateTimeProvider;
+    }
+
+
+    // Конструктор для тестирования, принимает DateTimeProvider
+    public TheBooks(DateTimeProvider dateTimeProvider) {
+        setDateTimeProvider(dateTimeProvider);
+        initializeBooks(allBooks, dateTimeProvider.getCurrentDateTime());
+    }
+
+
 
 
     /**
@@ -48,13 +46,15 @@ public class TheBooks implements BooksInterface {
      *
      * @param allBooks Список всех книг.
      */
-    public void initializeBooks(List<Book> allBooks) {
-
+    public void initializeBooks(List<Book> allBooks, LocalDateTime currentDate) {
         books = new ArrayList<>();
         int booksPerSet = 10;
+        int currentMonth = currentDate.getMonthValue();
+        int setsInMonth = (int) Math.ceil((double) allBooks.size() / 10);
+        int currentSet =0;
+        currentSet = (currentMonth == 12) ? 0 : (currentSet + 1) % setsInMonth;
         int startBookIndex = currentSet * booksPerSet;
         int endBookIndex = startBookIndex + booksPerSet;
-
         for (int i = startBookIndex; i < endBookIndex; i++) {
             if (i < allBooks.size()) {
                 books.add(allBooks.get(i));
@@ -87,65 +87,10 @@ public class TheBooks implements BooksInterface {
         return books.size();
     }
 
-
-    /**
-     * Получает порядковый номер книги в коллекции.
-     *
-     * @param book Книга, порядковый номер которой нужно получить.
-     * @return Порядковый номер книги.
-     */
-    public int getNumber(Book book) {
-        return books.indexOf(book) + 1;
-    }
-
-
-    /**
-     * Получает текущий номер десятки в коллекции книг.
-     *
-     * @return Текущий номер десятки.
-     */
-    public int getCurrentSet() {
-        // Получаем текущую десятку на основе месяца и индекса десятки
-        return currentSet;
-    }
-
-
-    /**
-     * Обновляет текущий месяц на основе текущей даты.
-     */
-    public void updateCurrentMonth() {
-        int newMonth = currentDate.getMonthValue();
-        if (newMonth != currentMonth) {
-            currentMonth = newMonth;
-        }
-    }
-
-
-    /**
-     * Обновляет текущую десятку книг в соответствии с текущим месяцем.
-     */
-    public void updateCurrentSet() {
-        int setsInMonth = (int) Math.ceil((double) allBooks.size() / 10);
-        currentSet = (currentMonth == 12) ? 0 : (currentSet + 1) % setsInMonth;
-    }
-
-
-    /**
-     * Устанавливает текущую дату.
-     *
-     * @param currentDate Новая текущая дата.
-     */
-    public void setCurrentDate(LocalDateTime currentDate) {
-        this.currentDate = currentDate;
-        updateCurrentMonth();
-        updateCurrentSet(); // Добавлен вызов обновления десятки
-    }
-
-
     /**
      * Класс, представляющий книгу в коллекции.
      */
-    public static class Book {
+     class Book {
 
         /**
          * Название книги.
@@ -178,7 +123,6 @@ public class TheBooks implements BooksInterface {
             return "\""+title +"\""+ " - " + author;
         }
     }
-
 
     /**
      * Список всех книг.
