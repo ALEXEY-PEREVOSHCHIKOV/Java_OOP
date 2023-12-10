@@ -3,17 +3,20 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+
 /**
  * Класс, представляющий коллекцию книг и предоставляющий методы для работы с ней.
  */
-public class TheBooks{
-
+public class TheBooks {
 
     /**
      * Список книг в коллекции.
      */
     private List<Book> books;
 
+    /**
+     * Поставщик даты и времени для использования в классе.
+     */
     private DateTimeProvider dateTimeProvider;
 
     /**
@@ -25,21 +28,24 @@ public class TheBooks{
         initializeBooks(allBooks, dateTimeProvider.getCurrentDateTime());
     }
 
-
-    // Устанавливаем DateTimeProvider
+    /**
+     * Устанавливает поставщика даты и времени для использования в классе.
+     *
+     * @param dateTimeProvider Поставщик даты и времени
+     */
     private void setDateTimeProvider(DateTimeProvider dateTimeProvider) {
         this.dateTimeProvider = dateTimeProvider;
     }
 
-
-    // Конструктор для тестирования, принимает DateTimeProvider
+    /**
+     * Конструктор класса с параметрами, принимает поставщика даты и времени.
+     *
+     * @param dateTimeProvider Поставщик даты и времени
+     */
     public TheBooks(DateTimeProvider dateTimeProvider) {
         setDateTimeProvider(dateTimeProvider);
         initializeBooks(allBooks, dateTimeProvider.getCurrentDateTime());
     }
-
-
-
 
     /**
      * Инициализирует коллекцию книг.
