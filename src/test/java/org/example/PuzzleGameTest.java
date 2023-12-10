@@ -5,7 +5,7 @@ import org.junit.Before;
 import org.junit.Test;
 import java.util.*;
 
-public class PuzzleGameTest implements PuzzleGameTestInterface{
+public class PuzzleGameTest {
     private long ChatId;
 
     private MessageHandling bot;
