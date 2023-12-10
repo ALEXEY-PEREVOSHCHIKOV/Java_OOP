@@ -26,6 +26,10 @@ public class BookVoting implements BookVotingInterface{
      */
     private Map<Integer, Integer> bookVotesCount; // Добавили для хранения количества голосов для каждой книги
 
+
+    /**
+     * Поставщик даты и времени для использования в классе.
+     */
     private DateTimeProvider dateTimeProvider;
 
     /**
@@ -38,6 +42,12 @@ public class BookVoting implements BookVotingInterface{
         bookVotesCount = new HashMap<>(); // Инициализируем мапу для хранения количества голосов
     }
 
+
+    /**
+     * Конструктор класса с параметрами, принимает поставщика даты и времени.
+     *
+     * @param dateTimeProvider Поставщик даты и времени
+     */
     public BookVoting(DateTimeProvider dateTimeProvider) {
         this.dateTimeProvider = dateTimeProvider;
         theBooks = new TheBooks(dateTimeProvider);
