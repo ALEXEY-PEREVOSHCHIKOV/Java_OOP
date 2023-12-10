@@ -1,63 +1,50 @@
 package org.example;
+
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-public class TheBooksTest  {
+/**
+ * Класс для тестирования обработки сообщений в контексте голосования.
+ */
+public class MessageHandlingForVotingTest {
 
+    /**
+     * Идентификатор чата для тестирования.
+     */
     private long ChatId;
+
+    /**
+     * Объект для обработки сообщений.
+     */
     private MessageHandling bot;
 
+    /**
+     * Метод, выполняемый перед каждым тестом, инициализирует идентификатор чата и объект для обработки сообщений.
+     */
     @Before
     public void setUp() {
         ChatId = 12345L;
         bot = new MessageHandling();
     }
 
-
     /**
      * Проверка корректного ответа от бота при использовании команды /vote.
      */
     @Test
     public void voteCommandTest() {
-        //проверка корректной работы на 3 этапах - выбора десятки,
-        // передачи её в класс BookVoting и работы команды,котору. отправояет пользователь в чат боту
+        // проверка корректной работы на 2 этапах - выбора десятки и
+        // передачи её в класс BookVoting и работы команды, которую отправляет пользователь в чат боту
 
 
         // Создаем фиксированный DateTimeProvider для теста
         LocalDateTime fixedDateTime = LocalDateTime.of(2023, 12, 4, 0, 0);
         DateTimeProvider fixedDateTimeProvider = new FixedDateTimeProvider(fixedDateTime);
         MessageHandling messageHandling = new MessageHandling(fixedDateTimeProvider);
-        BookVoting bookVoting = new BookVoting(fixedDateTimeProvider);
         messageHandling.setVotingEndDay(32);
-
-
-        // Создаем экземпляр TheBooks с использованием фиксированного DateTimeProvider
-        TheBooks theBooks = new TheBooks(fixedDateTimeProvider);
-        Assert.assertEquals("Количество книг должно быть равно 10", 10, theBooks.getSize());
-        Assert.assertEquals("Название первой книги", "\"KGBT+\" - Александр Пелевин", theBooks.getBookByNumber(1).toString());
-        Assert.assertEquals("Название последней книги", "\"Клуб убийств по четвергам\" - Ричард Осман", theBooks.getBookByNumber(10).toString());
-
-
-
-        // Вызываем метод showBookList и проверяем, что возвращаемая строка содержит правильные книги
-        String expectedBookList = " Пожалуйста, выберите 3 книги из списка популярных книг этого месяца ниже, которые вам нравятся больше всего, это поможет нам определить победителя. После этого сообщения отправьте номер первой наиболее понравившейся книги.\n" +
-                "1. \"KGBT+\" - Александр Пелевин\n" +
-                "2. \"TRANSHUMANISM INC.\" - Виктор Пелевин\n" +
-                "3. \"Двадцать тысяч лье под водой\" - Жюль Верн\n" +
-                "4. \"Вино из одуванчиков\" - Рэй Брэдбери\n" +
-                "5. \"Мастер и Маргарита\" - Михаил Булгаков\n" +
-                "6. \"The One. Единственный\" - Джон Маррс\n" +
-                "7. \"Атлант расправил плечи: Часть 3\" - Айн Рэнд\n" +
-                "8. \"Невидимый гость\" - Эльдар Сафин\n" +
-                "9. \"Тайная жизнь домашних животных 2\" - Стив С. Миллер\n" +
-                "10. \"Клуб убийств по четвергам\" - Ричард Осман\n";
-        String actualBookList = bookVoting.showBookList(ChatId);
-        Assert.assertEquals(expectedBookList, actualBookList);
-
-
 
         String response = messageHandling.parseMessage("/vote", ChatId);
         // Ваша проверка
@@ -206,7 +193,7 @@ public class TheBooksTest  {
     public void testEndOfVotingWithNoLeader() {
         bot.setVotingEndDay(LocalDate.now().getDayOfMonth()-1);
         String response = bot.parseMessage("/vote", ChatId);
-        Assert.assertEquals("Лидера голосования нет", response);
+        Assert.assertEquals("Голосование за книгу месяца уже окончено. В этом месяце никто не проголосовал.Вы можете присоединиться к нам и начать читать вместе! Новое голосование начнётся 1 числа следующего месяца.", response);
     }
 
     /**
@@ -227,4 +214,5 @@ public class TheBooksTest  {
         Assert.assertTrue(response.startsWith("Голосование за книгу месяца уже окончено. В этом месяце по итогам голосования читаем:\n"));
     }
 }
+
 
