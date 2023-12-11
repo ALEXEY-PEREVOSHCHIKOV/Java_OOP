@@ -84,9 +84,9 @@ public class TelegramBot extends TelegramLongPollingBot implements TelegramBotIn
         ReplyKeyboardMarkup keyboardMarkup = new ReplyKeyboardMarkup();
         List<KeyboardRow> keyboard = new ArrayList<>();
 
-        MessageHandling.UserState userState = messageHandling.getUserState(chatId);
+        MessageHandling.UserStates userStates = messageHandling.getUserState(chatId);
 
-        if (userState == MessageHandling.UserState.PUZZLE_MODE) {
+        if (userStates == MessageHandling.UserStates.PUZZLE_MODE) {
             // Создание клавиатуры для режима головоломки
             KeyboardRow row1 = new KeyboardRow();
             row1.add("/gethint");
