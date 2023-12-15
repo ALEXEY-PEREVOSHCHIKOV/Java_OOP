@@ -237,6 +237,10 @@ public class MessageHandlingForReadBookTest {
     @Test
     public void testRemoveBookCommandWithInvalidFormat() {
         String message = "InvalidNumber";
+        ArrayList<String> readBooks = new ArrayList<>();
+        readBooks.add("Book 1");
+        readBooks.add("Book 2");
+        when(storage.getReadBooks(ChatId)).thenReturn(readBooks);
         messageHandling.parseMessage("/removebook", ChatId);
         String response = messageHandling.parseMessage(message, ChatId);
         verify(storage, never()).updateReadBooks(eq(ChatId), any(ArrayList.class));
@@ -251,6 +255,7 @@ public class MessageHandlingForReadBookTest {
     public void testEditBookCommandWithValidData() {
         ArrayList<String> readBooks = new ArrayList<>();
         readBooks.add("Old Book\nOld Author\n2022");
+        when(storage.getReadBooks(ChatId)).thenReturn(readBooks);
         when(storage.getAllValues(ChatId)).thenReturn(readBooks);
         messageHandling.parseMessage("/editbook", ChatId);
         messageHandling.parseMessage("1", ChatId);
@@ -269,11 +274,9 @@ public class MessageHandlingForReadBookTest {
     public void testEditBookCommandWithInvalidBookNumber() {
         ArrayList<String> readBooks = new ArrayList<>();
         readBooks.add("Old Book\nOld Author\n2022");
+        when(storage.getReadBooks(ChatId)).thenReturn(readBooks);
         when(storage.getAllValues(ChatId)).thenReturn(readBooks);
         messageHandling.parseMessage("/editbook", ChatId);
-        messageHandling.parseMessage("3", ChatId);
-        messageHandling.parseMessage("New Book", ChatId);
-        messageHandling.parseMessage("New Author", ChatId);
         String response = messageHandling.parseMessage("2023", ChatId);
         verify(storage, never()).editReadBook(anyString(), anyString(), anyInt(), anyString(), anyString(), anyInt(), eq(ChatId));
         Assert.assertEquals("Указанный уникальный номер книги не существует в списке прочитанных книг.", response);
@@ -285,6 +288,9 @@ public class MessageHandlingForReadBookTest {
      */
     @Test
     public void testEditBookCommandWithInvalidDataFormat() {
+        ArrayList<String> readBooks = new ArrayList<>();
+        readBooks.add("Old Book\nOld Author\n2022");
+        when(storage.getReadBooks(ChatId)).thenReturn(readBooks);
         String message = "InvalidData";
         messageHandling.parseMessage("/editbook", ChatId);
         String response = messageHandling.parseMessage(message, ChatId);
