@@ -2,16 +2,26 @@ package org.example;
 import java.sql.*;
 import java.util.ArrayList;
 
+public class Storage implements BookStorage {
 
-// Реализация интерфейсов в классе Storage
-class Storage implements BookStorage {
+    private static final String DATABASE_URL = "jdbc:sqlite:read_books.db";
+
+    private Connection connection;
+
+
     final private ArrayList<String> quoteList;
+
 
     /**
      * Хранилище для цитат
      */
-    public Storage()
-    {
+    public Storage() {
+        try {
+            Class.forName("org.sqlite.JDBC");
+            connection = DriverManager.getConnection(DATABASE_URL);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         quoteList = new ArrayList<>();
         quoteList.add("Цитата: Начинать всегда стоит с того, что сеет сомнения. \n\nБорис Стругацкий.");
         quoteList.add("Цитата: 80% успеха - это появиться в нужном месте в нужное время.\n\nВуди Аллен");
@@ -34,29 +44,15 @@ class Storage implements BookStorage {
      */
     public ArrayList<String> getReadBooks(long chatId) {
         ArrayList<String> books = new ArrayList<>();
-        Connection connection = null;
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
-        try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:read_books.db");
-            String sql = "SELECT title FROM read_books WHERE chat_id = ?";
-            statement = connection.prepareStatement(sql);
+        try (PreparedStatement statement = connection.prepareStatement("SELECT title FROM read_books WHERE chat_id = ?")) {
             statement.setLong(1, chatId);
-            resultSet = statement.executeQuery();
-            while (resultSet.next()) {
-                books.add(resultSet.getString("title"));
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    books.add(resultSet.getString("title"));
+                }
             }
-        } catch (Exception e) {
-            System.err.println(e.getClass().getName() + ": " + e.getMessage());
-        } finally {
-            try {
-                if (resultSet != null) resultSet.close();
-                if (statement != null) statement.close();
-                if (connection != null) connection.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         return books;
     }
@@ -65,30 +61,14 @@ class Storage implements BookStorage {
      * Метод для добавления книги в список прочитанных книг по формату: название /n автор /n год
      */
     public void addReadBook(String title, String author, int year, long chatId) {
-        Connection connection = null;
-        try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:read_books.db");
-
-            // Создаем запрос на добавление книги в базу данных с указанием названия, автора и года прочтения
-            String sql = "INSERT INTO read_books (title, author, year, chat_id) VALUES (?, ?, ?, ?)";
-            PreparedStatement statement = connection.prepareStatement(sql);
+        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO read_books (title, author, year, chat_id) VALUES (?, ?, ?, ?)")) {
             statement.setString(1, title);
             statement.setString(2, author);
             statement.setInt(3, year);
             statement.setLong(4, chatId);
             statement.executeUpdate();
-            statement.close();
-        } catch (Exception e) {
-            System.err.println(e.getClass().getName() + ": " + e.getMessage());
-        } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException e) {
-                System.err.println(e.getClass().getName() + ": " + e.getMessage());
-            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
@@ -97,14 +77,8 @@ class Storage implements BookStorage {
      * Метод для замены книги в списке прочитанных книг по формату: старое_название /n старый_автор /n старый_год новое_название /n новый_автор /n новый_год
      */
     public void editReadBook(String oldTitle, String oldAuthor, int oldYear, String newTitle, String newAuthor, int newYear, long chatId) {
-        Connection connection = null;
-        try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:read_books.db");
-
-            // Создаем запрос на обновление книги в базе данных с новыми данными
-            String sql = "UPDATE read_books SET title = ?, author = ?, year = ? WHERE title = ? AND author = ? AND year = ? AND chat_id = ?";
-            PreparedStatement statement = connection.prepareStatement(sql);
+        try (PreparedStatement statement = connection.prepareStatement(
+                "UPDATE read_books SET title = ?, author = ?, year = ? WHERE title = ? AND author = ? AND year = ? AND chat_id = ?")) {
             statement.setString(1, newTitle);
             statement.setString(2, newAuthor);
             statement.setInt(3, newYear);
@@ -113,17 +87,8 @@ class Storage implements BookStorage {
             statement.setInt(6, oldYear);
             statement.setLong(7, chatId);
             statement.executeUpdate();
-            statement.close();
-        } catch (Exception e) {
-            System.err.println(e.getClass().getName() + ": " + e.getMessage());
-        } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException e) {
-                System.err.println(e.getClass().getName() + ": " + e.getMessage());
-            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
@@ -132,201 +97,123 @@ class Storage implements BookStorage {
      * Метод для полной очистки списка прочитанных книг
      */
     public void clearReadBooks(long chatId) {
-        Connection connection = null;
-        try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:read_books.db");
-
-            // Создаем запрос на удаление записей из таблицы read_books по chat_id
-            String deleteSql = "DELETE FROM read_books WHERE chat_id = ?";
-            PreparedStatement deleteStatement = connection.prepareStatement(deleteSql);
-            deleteStatement.setLong(1, chatId);
-            deleteStatement.executeUpdate();
-
-            // Закрываем подготовленный запрос
-            deleteStatement.close();
-        } catch (Exception e) {
-            System.err.println(e.getClass().getName() + ": " + e.getMessage());
-        } finally {
-            // Закрываем соединение с базой данных
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException e) {
-                System.err.println(e.getClass().getName() + ": " + e.getMessage());
-            }
+        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM read_books WHERE chat_id = ?")) {
+            statement.setLong(1, chatId);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
+
 
     /**
      * Метод для получения книг одного автора из списка прочитанных книг
      */
     public ArrayList<String> getBooksByAuthor(String author, long chatId) {
         ArrayList<String> books = new ArrayList<>();
-        Connection connection = null;
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
-
-        try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:read_books.db");
-            String sql = "SELECT title FROM read_books WHERE author = ? AND chat_id = ?";
-            statement = connection.prepareStatement(sql);
+        try (PreparedStatement statement = connection.prepareStatement("SELECT title FROM read_books WHERE author = ? AND chat_id = ?")) {
             statement.setString(1, author);
             statement.setLong(2, chatId);
-            resultSet = statement.executeQuery();
-
-            while (resultSet.next()) {
-                books.add(resultSet.getString("title"));
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    books.add(resultSet.getString("title"));
+                }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (resultSet != null) resultSet.close();
-                if (statement != null) statement.close();
-                if (connection != null) connection.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
-
         return books;
     }
+
 
     /**
      * Метод для получения книг по конкретному году из списка прочитанных книг
      */
     public ArrayList<String> getBooksByYear(int year, long chatId) {
         ArrayList<String> books = new ArrayList<>();
-        Connection connection = null;
-        PreparedStatement statement = null;
-        ResultSet resultSet = null;
-
-        try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:read_books.db");
-            String sql = "SELECT title FROM read_books WHERE year = ? AND chat_id = ?";
-            statement = connection.prepareStatement(sql);
+        try (PreparedStatement statement = connection.prepareStatement("SELECT title FROM read_books WHERE year = ? AND chat_id = ?")) {
             statement.setInt(1, year);
             statement.setLong(2, chatId);
-            resultSet = statement.executeQuery();
-
-            while (resultSet.next()) {
-                books.add(resultSet.getString("title"));
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    books.add(resultSet.getString("title"));
+                }
             }
-        } catch (Exception e) {
+        } catch (SQLException e) {
             e.printStackTrace();
-        } finally {
-            try {
-                if (resultSet != null) resultSet.close();
-                if (statement != null) statement.close();
-                if (connection != null) connection.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
         }
         return books;
     }
+
 
     /**
      * Метод для проверки существования книги в списке прочитанных книг
      */
     public boolean bookExists(String title, String author, int year, long chatId) {
-        Connection connection = null;
         boolean exists = false;
-        try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:read_books.db");
-
-            // Создаем запрос на поиск книги в базе данных с указанным названием, автором и годом прочтения
-            String sql = "SELECT * FROM read_books WHERE title = ? AND author = ? AND year = ? AND chat_id = ?";
-            PreparedStatement statement = connection.prepareStatement(sql);
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT * FROM read_books WHERE title = ? AND author = ? AND year = ? AND chat_id = ?")) {
             statement.setString(1, title);
             statement.setString(2, author);
             statement.setInt(3, year);
             statement.setLong(4, chatId);
-
-            ResultSet resultSet = statement.executeQuery();
-            // Если запись найдена, устанавливаем флаг exists в true
-            if (resultSet.next()) {
-                exists = true;
+            try (ResultSet resultSet = statement.executeQuery()) {
+                exists = resultSet.next();
             }
-
-            resultSet.close();
-            statement.close();
-        } catch (Exception e) {
-            System.err.println(e.getClass().getName() + ": " + e.getMessage());
-        } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException e) {
-                System.err.println(e.getClass().getName() + ": " + e.getMessage());
-            }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         return exists;
     }
+
 
     /**
      * Метод для обновления списка прочитанных книг
      */
     public void updateReadBooks(long chatId, ArrayList<String> readBooks) {
-        Connection connection = null;
         try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:read_books.db");
+            connection.setAutoCommit(false);
 
-            // Получаем текущий список книг из базы данных
             ArrayList<String> currentBooks = getReadBooks(chatId);
 
-            // Удаляем книги, которые были удалены из списка
             for (String book : currentBooks) {
                 if (!readBooks.contains(book)) {
-                    // Удаляем книгу из базы данных
-                    String deleteSql = "DELETE FROM read_books WHERE chat_id = ? AND title = ?";
-                    PreparedStatement deleteStatement = connection.prepareStatement(deleteSql);
-                    deleteStatement.setLong(1, chatId);
-                    deleteStatement.setString(2, book);
-                    deleteStatement.executeUpdate();
-                    deleteStatement.close();
+                    try (PreparedStatement deleteStatement = connection.prepareStatement(
+                            "DELETE FROM read_books WHERE chat_id = ? AND title = ?")) {
+                        deleteStatement.setLong(1, chatId);
+                        deleteStatement.setString(2, book);
+                        deleteStatement.executeUpdate();
+                    }
                 }
             }
 
-            // Обновляем книги в базе данных
-            PreparedStatement selectStatement = null;
-            for (String book : readBooks) {
-                // Проверяем, существует ли книга в базе данных
-                String selectSql = "SELECT * FROM read_books WHERE chat_id = ? AND title = ?";
-                selectStatement = connection.prepareStatement(selectSql);
-                selectStatement.setLong(1, chatId);
-                selectStatement.setString(2, book);
-                ResultSet resultSet = selectStatement.executeQuery();
-
-                // Если книги нет в базе данных, добавляем ее
-                if (!resultSet.next()) {
-                    String insertSql = "INSERT INTO read_books (title, chat_id) VALUES (?, ?)";
-                    PreparedStatement insertStatement = connection.prepareStatement(insertSql);
-                    insertStatement.setString(1, book);
-                    insertStatement.setLong(2, chatId);
-                    insertStatement.executeUpdate();
-                    insertStatement.close();
+            try (PreparedStatement selectStatement = connection.prepareStatement(
+                    "SELECT * FROM read_books WHERE chat_id = ? AND title = ?")) {
+                for (String book : readBooks) {
+                    selectStatement.setLong(1, chatId);
+                    selectStatement.setString(2, book);
+                    try (ResultSet resultSet = selectStatement.executeQuery()) {
+                        if (!resultSet.next()) {
+                            try (PreparedStatement insertStatement = connection.prepareStatement(
+                                    "INSERT INTO read_books (title, chat_id) VALUES (?, ?)")) {
+                                insertStatement.setString(1, book);
+                                insertStatement.setLong(2, chatId);
+                                insertStatement.executeUpdate();
+                            }
+                        }
+                    }
                 }
             }
 
-            selectStatement.close();
+            connection.commit();
+            connection.setAutoCommit(true);
         } catch (Exception e) {
-            System.err.println(e.getClass().getName() + ": " + e.getMessage());
-        } finally {
             try {
-                if (connection != null) {
-                    connection.close();
-                }
-            } catch (SQLException e) {
-                System.err.println(e.getClass().getName() + ": " + e.getMessage());
+                connection.rollback();
+            } catch (SQLException ex) {
+                ex.printStackTrace();
             }
+            e.printStackTrace();
         }
     }
 
@@ -335,38 +222,78 @@ class Storage implements BookStorage {
      * Метод для получения списка прочитанных книг в полном формате (название, автор, год)
      */
     public ArrayList<String> getAllValues(long chatId) {
-        Connection connection = null;
         ArrayList<String> allValues = new ArrayList<>();
-        try {
-            Class.forName("org.sqlite.JDBC");
-            connection = DriverManager.getConnection("jdbc:sqlite:read_books.db");
-
-            String sql = "SELECT title, author, year FROM read_books WHERE chat_id = ?";
-            PreparedStatement statement = connection.prepareStatement(sql);
+        try (PreparedStatement statement = connection.prepareStatement("SELECT title, author, year FROM read_books WHERE chat_id = ?")) {
             statement.setLong(1, chatId);
-            ResultSet resultSet = statement.executeQuery();
-
-            while (resultSet.next()) {
-                String title = resultSet.getString("title");
-                String author = resultSet.getString("author");
-                int year = resultSet.getInt("year");
-                allValues.add(title + "\n" + author + "\n" + year);
-            }
-
-            resultSet.close();
-            statement.close();
-        } catch (Exception e) {
-            System.err.println(e.getClass().getName() + ": " + e.getMessage());
-        } finally {
-            try {
-                if (connection != null) {
-                    connection.close();
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String title = resultSet.getString("title");
+                    String author = resultSet.getString("author");
+                    int year = resultSet.getInt("year");
+                    allValues.add(title + "\n" + author + "\n" + year);
                 }
-            } catch (SQLException e) {
-                System.err.println(e.getClass().getName() + ": " + e.getMessage());
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
         return allValues;
     }
 
+
+
+    public void addRecBook(String title, String author, String genre, long chatId) {
+        try (PreparedStatement statement = connection.prepareStatement("INSERT INTO recommendedBooks (title, author, genre, chat_id) VALUES (?, ?, ?, ?)")) {
+            statement.setString(1, title);
+            statement.setString(2, author);
+            statement.setString(3, genre);
+            statement.setLong(4, chatId);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public ArrayList<String> getRecBooks() {
+        ArrayList<String> books = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement("SELECT title FROM recommendedBooks")) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    books.add(resultSet.getString("title"));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return books;
+    }
+
+
+    public boolean recBookExists(String title, String author, String genre, long chatId) {
+        boolean exists = false;
+        try (PreparedStatement statement = connection.prepareStatement(
+                "SELECT * FROM recommendedBooks WHERE title = ? AND author = ? AND genre = ? AND chat_id = ?")) {
+            statement.setString(1, title);
+            statement.setString(2, author);
+            statement.setString(3, genre);
+            statement.setLong(4, chatId);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                exists = resultSet.next();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return exists;
+    }
+
+
+
+    public void closeConnection() {
+        try {
+            if (connection != null) {
+                connection.close();
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }
