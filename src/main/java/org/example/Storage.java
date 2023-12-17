@@ -170,49 +170,14 @@ public class Storage implements BookStorage {
     /**
      * Метод для обновления списка прочитанных книг
      */
-    public void updateReadBooks(long chatId, ArrayList<String> readBooks) {
-        try {
-            connection.setAutoCommit(false);
-
-            ArrayList<String> currentBooks = getReadBooks(chatId);
-
-            for (String book : currentBooks) {
-                if (!readBooks.contains(book)) {
-                    try (PreparedStatement deleteStatement = connection.prepareStatement(
-                            "DELETE FROM read_books WHERE chat_id = ? AND title = ?")) {
-                        deleteStatement.setLong(1, chatId);
-                        deleteStatement.setString(2, book);
-                        deleteStatement.executeUpdate();
-                    }
-                }
-            }
-
-            try (PreparedStatement selectStatement = connection.prepareStatement(
-                    "SELECT * FROM read_books WHERE chat_id = ? AND title = ?")) {
-                for (String book : readBooks) {
-                    selectStatement.setLong(1, chatId);
-                    selectStatement.setString(2, book);
-                    try (ResultSet resultSet = selectStatement.executeQuery()) {
-                        if (!resultSet.next()) {
-                            try (PreparedStatement insertStatement = connection.prepareStatement(
-                                    "INSERT INTO read_books (title, chat_id) VALUES (?, ?)")) {
-                                insertStatement.setString(1, book);
-                                insertStatement.setLong(2, chatId);
-                                insertStatement.executeUpdate();
-                            }
-                        }
-                    }
-                }
-            }
-
-            connection.commit();
-            connection.setAutoCommit(true);
-        } catch (Exception e) {
-            try {
-                connection.rollback();
-            } catch (SQLException ex) {
-                ex.printStackTrace();
-            }
+    public void updateReadBooks(long chatId, String oldTitle, String oldAuthor, int oldYear) {
+        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM read_books WHERE chat_id = ? AND title = ? AND author = ? AND year = ?")) {
+            statement.setLong(1, chatId);
+            statement.setString(2, oldTitle);
+            statement.setString(3, oldAuthor);
+            statement.setInt(4, oldYear);
+            statement.executeUpdate();
+        } catch (SQLException e) {
             e.printStackTrace();
         }
     }
@@ -268,14 +233,12 @@ public class Storage implements BookStorage {
     }
 
 
-    public boolean recBookExists(String title, String author, String genre, long chatId) {
+    public boolean recBookExists(String title, String author) {
         boolean exists = false;
         try (PreparedStatement statement = connection.prepareStatement(
-                "SELECT * FROM recommendedBooks WHERE title = ? AND author = ? AND genre = ? AND chat_id = ?")) {
+                "SELECT * FROM recommendedBooks WHERE title = ? AND author = ?")) {
             statement.setString(1, title);
             statement.setString(2, author);
-            statement.setString(3, genre);
-            statement.setLong(4, chatId);
             try (ResultSet resultSet = statement.executeQuery()) {
                 exists = resultSet.next();
             }
@@ -285,6 +248,82 @@ public class Storage implements BookStorage {
         return exists;
     }
 
+
+    public ArrayList<String> searchBooksByGenre(String genre) {
+        ArrayList<String> books = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement("SELECT title, author FROM recommendedBooks WHERE genre = ?")) {
+            statement.setString(1, genre);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String title = resultSet.getString("title");
+                    String author = resultSet.getString("author");
+                    books.add(title + " от автора " + author);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return books;
+    }
+
+    public ArrayList<String> searchBooksByAuthor(String author) {
+        ArrayList<String> books = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement("SELECT title, genre FROM recommendedBooks WHERE author = ?")) {
+            statement.setString(1, author);
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String title = resultSet.getString("title");
+                    String genre = resultSet.getString("genre");
+                    books.add(title + " (жанр: " + genre + ")");
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return books;
+    }
+
+
+    public void clearRecBooks(long chatId) {
+        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM recommendedBooks WHERE chat_id = ?")) {
+            statement.setLong(1, chatId);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public void updateRecBooks(long chatId, String oldTitle, String oldAuthor, String oldGenre) {
+        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM recommendedBooks WHERE chat_id = ? AND title = ? AND author = ? AND genre = ?")) {
+            statement.setLong(1, chatId);
+            statement.setString(2, oldTitle);
+            statement.setString(3, oldAuthor);
+            statement.setString(4, oldGenre);
+            statement.executeUpdate();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    public ArrayList<String> getAllRecValues() {
+        ArrayList<String> allValues = new ArrayList<>();
+        try (PreparedStatement statement = connection.prepareStatement("SELECT title, author, genre, chat_id FROM recommendedBooks")) {
+            try (ResultSet resultSet = statement.executeQuery()) {
+                while (resultSet.next()) {
+                    String title = resultSet.getString("title");
+                    String author = resultSet.getString("author");
+                    String genre = resultSet.getString("genre");
+                    long chat_id = resultSet.getLong("chat_id");
+                    allValues.add(title + "\n" + author + "\n" + genre +"\n" + chat_id);
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        return allValues;
+    }
 
 
     public void closeConnection() {
