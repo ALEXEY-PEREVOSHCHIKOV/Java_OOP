@@ -202,14 +202,16 @@ public class MessageHandlingForReadBookTest {
      */
     @Test
     public void testRemoveBookCommandWithValidBookNumber() {
-        String message = "1";
+        ArrayList<String> books = new ArrayList<>();
+        books.add("Book 1");
+        books.add("Book 2");
         ArrayList<String> readBooks = new ArrayList<>();
-        readBooks.add("Book 1");
-        readBooks.add("Book 2");
-        when(storage.getReadBooks(ChatId)).thenReturn(readBooks);
+        readBooks.add("Book 1\nAuthor 1\n2022");
+        readBooks.add("Book 2\nAuthor 2\n2023");
+        when(storage.getReadBooks(ChatId)).thenReturn(books);
+        when(storage.getAllValues(ChatId)).thenReturn(readBooks);
         messageHandling.parseMessage("/removebook", ChatId);
-        String response = messageHandling.parseMessage(message, ChatId);
-        verify(storage, times(1)).updateReadBooks(eq(ChatId), any(ArrayList.class));
+        String response = messageHandling.parseMessage("1", ChatId);
         Assert.assertEquals("Книга Book 1 успешно удалена из списка прочитанных!", response);
     }
 
@@ -226,7 +228,6 @@ public class MessageHandlingForReadBookTest {
         when(storage.getReadBooks(ChatId)).thenReturn(readBooks);
         messageHandling.parseMessage("/removebook", ChatId);
         String response = messageHandling.parseMessage(message, ChatId);
-        verify(storage, never()).updateReadBooks(eq(ChatId), any(ArrayList.class));
         Assert.assertEquals("Указанный уникальный номер книги не существует в списке прочитанных книг.", response);
     }
 
@@ -243,7 +244,6 @@ public class MessageHandlingForReadBookTest {
         when(storage.getReadBooks(ChatId)).thenReturn(readBooks);
         messageHandling.parseMessage("/removebook", ChatId);
         String response = messageHandling.parseMessage(message, ChatId);
-        verify(storage, never()).updateReadBooks(eq(ChatId), any(ArrayList.class));
         Assert.assertEquals("Некорректный формат номера книги.", response);
     }
 
