@@ -285,12 +285,6 @@ public class MessageHandling implements MessageHandlingInterface {
             response = "Список прочитанных книг очищен!";
 
 
-        } else if (textMsg.equals("/clearrec")) {
-            // Очищаем список прочитанных книг
-            storage.clearRecBooks(chatId);
-            response = "Все рекомендованные вами книги удалены из списка!";
-
-
         } else if (textMsg.equals("/getread")) {
             // Получаем список прочитанных книг с уникальными номерами
             ArrayList<String> readBooks = storage.getReadBooks(chatId);
@@ -373,7 +367,7 @@ public class MessageHandling implements MessageHandlingInterface {
             // Получаем список прочитанных книг с уникальными номерами
             ArrayList<String> readBooks = storage.getRecBooks();
             if (readBooks.isEmpty()) {
-                response = "Список прочитанных книг пуст.";
+                response = "Список книг пуст.";
             } else {
                 userState.put(chatId, UserStates.REMOVE_REC_MODE);
                 bookInputSteps.put(chatId, BookInputStep.TITLE);
@@ -724,6 +718,13 @@ public class MessageHandling implements MessageHandlingInterface {
     }
 
 
+    /**
+     * Метод для обработки режима добавления рекомендованных книг.
+     *
+     * @param textMsg Входное текстовое сообщение от пользователя.
+     * @param chatId  Идентификатор чата.
+     * @return Сообщение-ответ на ввод пользователя.
+     */
     private String handleRecBookMode(String textMsg, long chatId) {
         String response;
         // Проверяем текущий шаг ввода для данного чата
@@ -758,11 +759,7 @@ public class MessageHandling implements MessageHandlingInterface {
                     // Проверяем, что введенный жанр является допустимым
                     if (Arrays.asList(validGenres).contains(userGenre)) {
                         bookData.put(chatId, bookData.get(chatId) + "\n" + userGenre); // Сохраняем жанр книги
-                        // bookInputSteps.put(chatId, BookInputStep.YEAR); // Убираем переход к следующему шагу (году)
-                        // response = "Теперь введите год прочтения книги:";
 
-                        // Обработка ввода жанра завершается здесь, без перехода к следующему шагу
-                        try {
                             // Проверяем существование книги в базе данных
                             String[] parts = bookData.get(chatId).split("\n");
                             String title = parts[0].trim();
@@ -776,16 +773,11 @@ public class MessageHandling implements MessageHandlingInterface {
                                 response = "Книга '" + title + "' от автора " + author + " (жанр: " + genre + ") успешно добавлена в список!";
                             } else {
                                 userState.put(chatId, UserStates.DEFAULT);
-                                response = "Книга с указанным названием, автором и жанром уже существует в базе данных.";
+                                response = "Книга с указанным названием и автором уже существует в базе данных.";
                             }
-
                             // Сбрасываем состояние добавления книги для данного чата
                             bookInputSteps.remove(chatId);
                             bookData.remove(chatId);
-
-                        } catch (NumberFormatException e) {
-                            response = "Ошибка при добавлении книги. Пожалуйста, попробуйте еще раз.";
-                        } 
                     } else {
                         response = "Неверный жанр, выберите жанр из списка выше.";
                     }
@@ -799,6 +791,13 @@ public class MessageHandling implements MessageHandlingInterface {
     }
 
 
+    /**
+     * Метод для обработки поиска книг по жанру.
+     *
+     * @param textMsg Входное текстовое сообщение от пользователя.
+     * @param chatId  Идентификатор чата.
+     * @return Сообщение-ответ на ввод пользователя.
+     */
     private String handleSearchByGenre(String textMsg, long chatId) {
         String response;
 
@@ -820,6 +819,8 @@ public class MessageHandling implements MessageHandlingInterface {
                             bookList.append("- ").append(book).append("\n");
                         }
                         response = bookList.toString();
+                        userState.put(chatId, UserStates.DEFAULT);
+                        bookInputSteps.remove(chatId);
                     } else {
                         response = "Книг по указанному жанру не найдено.";
                         userState.put(chatId, UserStates.DEFAULT);
@@ -842,6 +843,13 @@ public class MessageHandling implements MessageHandlingInterface {
     }
 
 
+    /**
+     * Метод для обработки поиска книг по автору.
+     *
+     * @param textMsg Входное текстовое сообщение от пользователя.
+     * @param chatId  Идентификатор чата.
+     * @return Сообщение-ответ на ввод пользователя.
+     */
     private String handleSearchByAuthor(String textMsg, long chatId) {
         String response;
 
@@ -878,6 +886,13 @@ public class MessageHandling implements MessageHandlingInterface {
     }
 
 
+    /**
+     * Метод для обработки удаления рекомендованных книг.
+     *
+     * @param textMsg Входное текстовое сообщение от пользователя.
+     * @param chatId  Идентификатор чата.
+     * @return Сообщение-ответ на ввод пользователя.
+     */
     private String handleRemoveRecBook(String textMsg, long chatId) {
         String response;
         // Проверяем текущий шаг ввода для данного чата
