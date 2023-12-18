@@ -2,18 +2,32 @@ package org.example;
 import java.sql.*;
 import java.util.ArrayList;
 
+/**
+ * Класс для управления хранилищем книг и цитат.
+ */
 public class Storage implements BookStorage {
 
+
+    /**
+     * URL базы данных SQLite.
+     */
     private static final String DATABASE_URL = "jdbc:sqlite:read_books.db";
 
+
+    /**
+     * Соединение с базой данных.
+     */
     private Connection connection;
 
 
+    /**
+     * Список цитат.
+     */
     final private ArrayList<String> quoteList;
 
 
     /**
-     * Хранилище для цитат
+     * Конструктор класса. Инициализирует соединение с базой данных и список цитат.
      */
     public Storage() {
         try {
@@ -205,7 +219,14 @@ public class Storage implements BookStorage {
     }
 
 
-
+    /**
+     * Метод для добавления рекомендованной книги в базу данных.
+     *
+     * @param title   Название книги.
+     * @param author  Автор книги.
+     * @param genre   Жанр книги.
+     * @param chatId  Идентификатор чата.
+     */
     public void addRecBook(String title, String author, String genre, long chatId) {
         try (PreparedStatement statement = connection.prepareStatement("INSERT INTO recommendedBooks (title, author, genre, chat_id) VALUES (?, ?, ?, ?)")) {
             statement.setString(1, title);
@@ -218,6 +239,12 @@ public class Storage implements BookStorage {
         }
     }
 
+
+    /**
+     * Метод для получения списка названий рекомендованных книг.
+     *
+     * @return Список названий книг.
+     */
     public ArrayList<String> getRecBooks() {
         ArrayList<String> books = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement("SELECT title FROM recommendedBooks")) {
@@ -233,6 +260,14 @@ public class Storage implements BookStorage {
     }
 
 
+
+    /**
+     * Метод для проверки существования рекомендованной книги.
+     *
+     * @param title  Название книги.
+     * @param author Автор книги.
+     * @return {@code true}, если книга существует, иначе {@code false}.
+     */
     public boolean recBookExists(String title, String author) {
         boolean exists = false;
         try (PreparedStatement statement = connection.prepareStatement(
@@ -249,6 +284,12 @@ public class Storage implements BookStorage {
     }
 
 
+    /**
+     * Метод для поиска книг по указанному жанру.
+     *
+     * @param genre Жанр книг.
+     * @return Список найденных книг в формате "название от автора".
+     */
     public ArrayList<String> searchBooksByGenre(String genre) {
         ArrayList<String> books = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement("SELECT title, author FROM recommendedBooks WHERE genre = ?")) {
@@ -266,6 +307,13 @@ public class Storage implements BookStorage {
         return books;
     }
 
+
+    /**
+     * Метод для поиска книг по указанному автору.
+     *
+     * @param author Автор книг.
+     * @return Список найденных книг в формате "название (жанр)".
+     */
     public ArrayList<String> searchBooksByAuthor(String author) {
         ArrayList<String> books = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement("SELECT title, genre FROM recommendedBooks WHERE author = ?")) {
@@ -284,16 +332,14 @@ public class Storage implements BookStorage {
     }
 
 
-    public void clearRecBooks(long chatId) {
-        try (PreparedStatement statement = connection.prepareStatement("DELETE FROM recommendedBooks WHERE chat_id = ?")) {
-            statement.setLong(1, chatId);
-            statement.executeUpdate();
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-
+    /**
+     * Метод для обновления данных о рекомендованных книгах.
+     *
+     * @param chatId   Идентификатор чата.
+     * @param oldTitle Старое название книги.
+     * @param oldAuthor Старый автор книги.
+     * @param oldGenre  Старый жанр книги.
+     */
     public void updateRecBooks(long chatId, String oldTitle, String oldAuthor, String oldGenre) {
         try (PreparedStatement statement = connection.prepareStatement("DELETE FROM recommendedBooks WHERE chat_id = ? AND title = ? AND author = ? AND genre = ?")) {
             statement.setLong(1, chatId);
@@ -307,6 +353,11 @@ public class Storage implements BookStorage {
     }
 
 
+    /**
+     * Метод для получения всех значений о рекомендованных книгах.
+     *
+     * @return Список строк с данными о книгах.
+     */
     public ArrayList<String> getAllRecValues() {
         ArrayList<String> allValues = new ArrayList<>();
         try (PreparedStatement statement = connection.prepareStatement("SELECT title, author, genre, chat_id FROM recommendedBooks")) {
@@ -326,6 +377,9 @@ public class Storage implements BookStorage {
     }
 
 
+    /**
+     * Метод для закрытия соединения с базой данных.
+     */
     public void closeConnection() {
         try {
             if (connection != null) {
