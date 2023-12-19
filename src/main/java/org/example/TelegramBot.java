@@ -119,9 +119,23 @@ public class TelegramBot extends TelegramLongPollingBot implements TelegramBotIn
             row3.add("/removebook");
             row3.add("/addbook");
 
+
+
+            KeyboardRow row4 = new KeyboardRow();
+            row4.add("/recommendbook");
+            row4.add("/allrecommendbooks");
+            row4.add("/searchbygenre");
+            row4.add("/searchbyauthor");
+            row4.add("/removerecbook");
+
+
+
             keyboard.add(row1);
             keyboard.add(row2);
             keyboard.add(row3);
+            keyboard.add(row4);
+
+
         }
 
         // Установка клавиатуры
