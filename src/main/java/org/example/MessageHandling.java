@@ -9,7 +9,9 @@ enum BookInputStep {
 
     NUMBER,
 
-    YEAR
+    YEAR,
+
+    GENRE
 }
 
 
@@ -19,7 +21,7 @@ enum BookInputStep {
 public class MessageHandling implements MessageHandlingInterface {
 
     public enum UserStates {
-        DEFAULT, PUZZLE_MODE, VOTE_MODE, BOOK_MODE, AUTHOR_BOOK_MODE, YEAR_BOOK_MODE, REMOVE_BOOK_MODE, EDIT_BOOK_MODE
+        DEFAULT, PUZZLE_MODE, VOTE_MODE, BOOK_MODE, AUTHOR_BOOK_MODE, YEAR_BOOK_MODE, REMOVE_BOOK_MODE, EDIT_BOOK_MODE, REC_BOOK_MODE, AUTHOR_REC_MODE, GENRE_REC_MODE, REMOVE_REC_MODE
     }
 
     /**
@@ -155,6 +157,14 @@ public class MessageHandling implements MessageHandlingInterface {
             response = handleRemoveBook(textMsg, chatId);
         } else if (currentUserStates == UserStates.EDIT_BOOK_MODE) {
             response = handleEditBookMode(textMsg, chatId);
+        } else if (currentUserStates == UserStates.REC_BOOK_MODE) {
+            response = handleRecBookMode(textMsg, chatId);
+        } else if (currentUserStates == UserStates.AUTHOR_REC_MODE) {
+            response = handleSearchByAuthor(textMsg, chatId);
+        } else if (currentUserStates == UserStates.GENRE_REC_MODE) {
+            response = handleSearchByGenre(textMsg, chatId);
+        } else if (currentUserStates == UserStates.REMOVE_REC_MODE) {
+            response = handleRemoveRecBook(textMsg, chatId);
         } else {
             response = handleDefaultMode(textMsg, chatId);
         }
@@ -240,7 +250,7 @@ public class MessageHandling implements MessageHandlingInterface {
             response = "Прочитайте 'Убийство в восточном экспрессе', 'Снеговик' или 'Собака Баскервилей'";
 
 
-        } else if (textMsg.startsWith("/addbook")) {
+        } else if (textMsg.equals("/addbook")) {
             // Переходим к обработке добавления книги
             userState.put(chatId, UserStates.BOOK_MODE);
             bookInputSteps.put(chatId, BookInputStep.TITLE);
@@ -248,12 +258,25 @@ public class MessageHandling implements MessageHandlingInterface {
             response = "Введите название книги:";
 
 
-        } else if (textMsg.equals("/editbook")) {
-                userState.put(chatId, UserStates.EDIT_BOOK_MODE);
-            // Переходим в режим редактирования книг
-            bookInputSteps.put(chatId, BookInputStep.NUMBER);
+        } else if (textMsg.equals("/recommendbook")) {
+            // Переходим к обработке добавления книги
+            userState.put(chatId, UserStates.REC_BOOK_MODE);
+            bookInputSteps.put(chatId, BookInputStep.TITLE);
             bookData.put(chatId, ""); // Инициализируем пустой строкой
-            response = "Введите номер книги из списка /getread, которую хотите изменить:";
+            response = "Введите название книги:";
+
+
+        } else if (textMsg.equals("/editbook")) {
+            ArrayList<String> readBooks = storage.getReadBooks(chatId);
+            if (readBooks.isEmpty()) {
+                response = "Список прочитанных книг пуст.";
+            } else {
+                userState.put(chatId, UserStates.EDIT_BOOK_MODE);
+                // Переходим в режим редактирования книг
+                bookInputSteps.put(chatId, BookInputStep.NUMBER);
+                bookData.put(chatId, ""); // Инициализируем пустой строкой
+                response = "Введите номер книги из списка /getread, которую хотите изменить:";
+            }
 
 
         } else if (textMsg.equals("/clearread")) {
@@ -275,25 +298,82 @@ public class MessageHandling implements MessageHandlingInterface {
                 response = responseBuilder.toString();
             }
 
-        } else if (textMsg.startsWith("/getbyauthor")) {
+
+        } else if (textMsg.equals("/allrecommendbooks")) {
+            // Получаем список прочитанных книг с уникальными номерами
+            ArrayList<String> readBooks = storage.getRecBooks();
+            if (readBooks.isEmpty()) {
+                response = "Список книг пуст.";
+            } else {
+                StringBuilder responseBuilder = new StringBuilder("Рекомендованные пользователями книги:\n");
+                for (int i = 0; i < readBooks.size(); i++) {
+                    responseBuilder.append(i + 1).append(". ").append(readBooks.get(i)).append("\n");
+                }
+                response = responseBuilder.toString();
+            }
+
+
+        } else if (textMsg.equals("/getbyauthor")) {
             userState.put(chatId, UserStates.AUTHOR_BOOK_MODE);
             bookInputSteps.put(chatId, BookInputStep.TITLE);
             bookData.put(chatId, ""); // Инициализируем пустой строкой
             response = "Введите автора книги, которую хотите вывести:";
 
 
-        } else if (textMsg.startsWith("/getbyyear")) {
+        } else if (textMsg.equals("/getbyyear")) {
             userState.put(chatId, UserStates.YEAR_BOOK_MODE);
             bookInputSteps.put(chatId, BookInputStep.TITLE);
             bookData.put(chatId, ""); // Инициализируем пустой строкой
             response = "Введите год книги, которую хотите вывести:";
 
 
-        } else if (textMsg.startsWith("/removebook")) {
+        } else if (textMsg.startsWith("/searchbygenre")) {
+            userState.put(chatId, UserStates.GENRE_REC_MODE);
+            bookInputSteps.put(chatId, BookInputStep.GENRE);
+            bookData.put(chatId, ""); // Инициализируем пустой строкой
+            response = "Выберите жанр из списка ниже, книги из которого вы хотели бы узнать, и напишите мне его следующим сообщением:\n" +
+                    "Драма\n" +
+                    "Приключения \n" +
+                    "Фэнтези \n" +
+                    "Научная Фантастика \n" +
+                    "История \n" +
+                    "Ужасы \n" +
+                    "Детектив \n" +
+                    "Сказка \n" +
+                    "Романтика\n";
+
+
+        } else if (textMsg.startsWith("/searchbyauthor")) {
+            userState.put(chatId, UserStates.AUTHOR_REC_MODE);
+            bookInputSteps.put(chatId, BookInputStep.AUTHOR);
+            bookData.put(chatId, ""); // Инициализируем пустой строкой
+            response = "Введите автора, книги которого вы хотели бы найти";
+
+
+        } else if (textMsg.equals("/removebook")) {
+            // Получаем список прочитанных книг с уникальными номерами
+            ArrayList<String> readBooks = storage.getReadBooks(chatId);
+            if (readBooks.isEmpty()) {
+                response = "Список прочитанных книг пуст.";
+            } else {
                 userState.put(chatId, UserStates.REMOVE_BOOK_MODE);
                 bookInputSteps.put(chatId, BookInputStep.TITLE);
                 bookData.put(chatId, ""); // Инициализируем пустой строкой
                 response = "Введите номер книги из списка /getread, которую хотите удалить:";
+            }
+
+
+        } else if (textMsg.equals("/removerecbook")) {
+            // Получаем список прочитанных книг с уникальными номерами
+            ArrayList<String> readBooks = storage.getRecBooks();
+            if (readBooks.isEmpty()) {
+                response = "Список книг пуст.";
+            } else {
+                userState.put(chatId, UserStates.REMOVE_REC_MODE);
+                bookInputSteps.put(chatId, BookInputStep.TITLE);
+                bookData.put(chatId, ""); // Инициализируем пустой строкой
+                response = "Введите номер книги из списка /allrecommendbooks, которую хотите удалить:";
+            }
 
 
         } else if (textMsg.equals("/playpuzzle")) {
@@ -301,6 +381,7 @@ public class MessageHandling implements MessageHandlingInterface {
             userState.put(chatId, UserStates.PUZZLE_MODE);
             // Вход в режим головоломки
             response = puzzleGame.startPuzzle(chatId);
+
 
         } else if (textMsg.equals("/vote")) {
             if (currentDay <= VOTING_END_DAY) {
@@ -323,6 +404,7 @@ public class MessageHandling implements MessageHandlingInterface {
                 }
             }
 
+
         } else if (textMsg.equals("/revote")) {
             if (currentDay <= VOTING_END_DAY) {
                 if (votingInProgressForChat(chatId)) {
@@ -340,6 +422,7 @@ public class MessageHandling implements MessageHandlingInterface {
                     response = "Голосование за книгу месяца уже окончено. В этом месяце никто не проголосовал.Вы можете присоединиться к нам и начать читать вместе! Новое голосование начнётся 1 числа следующего месяца.";
                 }
             }
+
 
         }else if (textMsg.equals("/voteresults")) {
             if (currentDay <= VOTING_END_DAY) {
@@ -437,22 +520,22 @@ public class MessageHandling implements MessageHandlingInterface {
         if (currentStep == BookInputStep.TITLE) {
             bookData.put(chatId, textMsg.trim()); // Сохраняем имя автора
 
-            // Получаем список книг по автору из базы данных
-            String author = bookData.get(chatId);
-            ArrayList<String> booksByAuthor = storage.getBooksByAuthor(author, chatId);
+                // Получаем список книг по автору из базы данных
+                String author = bookData.get(chatId);
+                ArrayList<String> booksByAuthor = storage.getBooksByAuthor(author, chatId);
 
-            if (!booksByAuthor.isEmpty()) {
-                // Формируем ответ списком книг
-                StringBuilder booksResponse = new StringBuilder("Книги автора " + author + ":\n");
-                for (String book : booksByAuthor) {
-                    booksResponse.append("\"").append(book).append("\";\n");
+                if (!booksByAuthor.isEmpty()) {
+                    // Формируем ответ списком книг
+                    StringBuilder booksResponse = new StringBuilder("Книги автора " + author + ":\n");
+                    for (String book : booksByAuthor) {
+                        booksResponse.append("\"").append(book).append("\";\n");
+                    }
+                    response = booksResponse.toString();
+                    userState.put(chatId, UserStates.DEFAULT);
+                } else {
+                    response = "Нет прочитанных книг этого автора.";
+                    userState.put(chatId, UserStates.DEFAULT);
                 }
-                response = booksResponse.toString();
-                userState.put(chatId, UserStates.DEFAULT);
-            } else {
-                response = "Нет прочитанных книг этого автора.";
-                userState.put(chatId, UserStates.DEFAULT);
-            }
 
             // Сбрасываем состояние для данного чата
             bookInputSteps.remove(chatId);
@@ -465,6 +548,7 @@ public class MessageHandling implements MessageHandlingInterface {
 
         return response;
     }
+
 
 
     /**
@@ -483,21 +567,20 @@ public class MessageHandling implements MessageHandlingInterface {
         if (currentStep == BookInputStep.TITLE) {
             bookData.put(chatId, textMsg.trim()); // Сохраняем год
 
-            // Получаем список книг по году из базы данных
-            int year = Integer.parseInt(bookData.get(chatId));
-            ArrayList<String> booksByYear = storage.getBooksByYear(year, chatId);
+                // Получаем список книг по году из базы данных
+                int year = Integer.parseInt(bookData.get(chatId));
+                ArrayList<String> booksByYear = storage.getBooksByYear(year, chatId);
 
-            if (!booksByYear.isEmpty()) {
-                // Формируем ответ списком книг
-                StringBuilder booksResponse = new StringBuilder("Книги " + year + " года:\n");
-                for (String book : booksByYear) {
-                    booksResponse.append("\"").append(book).append("\";\n");
+                if (!booksByYear.isEmpty()) {
+                    // Формируем ответ списком книг
+                    StringBuilder booksResponse = new StringBuilder("Книги " + year + " года:\n");
+                    for (String book : booksByYear) {
+                        booksResponse.append("\"").append(book).append("\";\n");
+                    }
+                    response = booksResponse.toString();
+                } else {
+                    response = "Нет прочитанных книг в этом году.";
                 }
-                response = booksResponse.toString();
-            } else {
-                response = "Нет прочитанных книг в этом году.";
-                userState.put(chatId, UserStates.DEFAULT);
-            }
 
             // Сбрасываем состояние для данного чата и выключаем флаг
             bookInputSteps.remove(chatId);
@@ -525,16 +608,23 @@ public class MessageHandling implements MessageHandlingInterface {
         // Если пользователь отправляет произвольное сообщение, предполагаем, что это номер книги
         if (currentStep == BookInputStep.TITLE) {
             try {
-                int bookNumber = Integer.parseInt(textMsg.trim());
-                ArrayList<String> readBooks = storage.getReadBooks(chatId);
-                    if (bookNumber >= 1 && bookNumber <= readBooks.size()) {
-                        String removedBook = readBooks.remove(bookNumber - 1); // Удаляем книгу и получаем ее данные
-                        storage.updateReadBooks(chatId, readBooks); // Обновляем список без удаленной книги
+                    int bookNumber = Integer.parseInt(textMsg.trim());
+                ArrayList<String> readBooks = storage.getAllValues(chatId);
+                ArrayList<String> anotherreadBooks = storage.getReadBooks(chatId);
+                if (bookNumber >= 1 && bookNumber <= readBooks.size()) {
+
+                    String[] oldBookParts = readBooks.get(bookNumber - 1).split("\n");
+                    String oldTitle = oldBookParts[0];
+                    String oldAuthor = oldBookParts[1];
+                    int oldYear = Integer.parseInt(oldBookParts[2]);
+
+                    String removedBook = anotherreadBooks.remove(bookNumber - 1); // Удаляем книгу и получаем ее данные
+                    storage.updateReadBooks(chatId, oldTitle,oldAuthor,oldYear); // Обновляем список без удаленной книги
                         userState.put(chatId, UserStates.DEFAULT);
                         response = "Книга " + removedBook + " успешно удалена из списка прочитанных!";
-                    } else {
-                        response = "Указанный уникальный номер книги не существует в списке прочитанных книг.";
-                    }
+                } else {
+                    response = "Указанный уникальный номер книги не существует в списке прочитанных книг.";
+                }
             } catch (NumberFormatException e) {
                 response = "Некорректный формат номера книги.";
             }
@@ -624,6 +714,229 @@ public class MessageHandling implements MessageHandlingInterface {
                     userState.put(chatId, UserStates.DEFAULT);
             }
         }
+        return response;
+    }
+
+
+    /**
+     * Метод для обработки режима добавления рекомендованных книг.
+     *
+     * @param textMsg Входное текстовое сообщение от пользователя.
+     * @param chatId  Идентификатор чата.
+     * @return Сообщение-ответ на ввод пользователя.
+     */
+    private String handleRecBookMode(String textMsg, long chatId) {
+        String response;
+        // Проверяем текущий шаг ввода для данного чата
+        BookInputStep currentStep = bookInputSteps.getOrDefault(chatId, BookInputStep.TITLE);
+
+        // Если пользователь отправляет произвольное сообщение, предполагаем, что это название книги
+        if (currentStep == BookInputStep.TITLE) {
+            bookData.put(chatId, textMsg.trim()); // Сохраняем название книги
+            bookInputSteps.put(chatId, BookInputStep.AUTHOR); // Переходим к следующему шагу
+            response = "Теперь введите автора книги:";
+        } else {
+            // Иначе обрабатываем ввод в соответствии с текущим шагом
+            switch (currentStep) {
+                case AUTHOR:
+                    bookData.put(chatId, bookData.get(chatId) + "\n" + textMsg.trim()); // Сохраняем автора книги
+                    bookInputSteps.put(chatId, BookInputStep.GENRE); // Переходим к следующему шагу
+                    response = "Выберите жанр, который наиболее близок к вашей книге из списка ниже и напишите мне его следующим сообщением:\n" +
+                            "Драма\n" +
+                            "Приключения \n" +
+                            "Фэнтези \n" +
+                            "Научная Фантастика \n" +
+                            "История \n" +
+                            "Ужасы \n" +
+                            "Детектив \n" +
+                            "Сказка \n" +
+                            "Романтика\n";
+                    break;
+                case GENRE:
+                    String[] validGenres = {"Драма", "Приключения", "Фэнтези", "Научная Фантастика", "История", "Ужасы", "Детектив", "Сказка", "Романтика"};
+                    String userGenre = textMsg.trim();
+
+                    // Проверяем, что введенный жанр является допустимым
+                    if (Arrays.asList(validGenres).contains(userGenre)) {
+                        bookData.put(chatId, bookData.get(chatId) + "\n" + userGenre); // Сохраняем жанр книги
+
+                            // Проверяем существование книги в базе данных
+                            String[] parts = bookData.get(chatId).split("\n");
+                            String title = parts[0].trim();
+                            String author = parts[1].trim();
+                            String genre = parts[2].trim();
+
+                            if (!storage.recBookExists(title, author)) {
+                                // Если книги с такими данными нет, добавляем книгу в базу данных
+                                storage.addRecBook(title, author, genre, chatId);
+                                userState.put(chatId, UserStates.DEFAULT);
+                                response = "Книга '" + title + "' от автора " + author + " (жанр: " + genre + ") успешно добавлена в список!";
+                            } else {
+                                userState.put(chatId, UserStates.DEFAULT);
+                                response = "Книга с указанным названием и автором уже существует в базе данных.";
+                            }
+                            // Сбрасываем состояние добавления книги для данного чата
+                            bookInputSteps.remove(chatId);
+                            bookData.remove(chatId);
+                    } else {
+                        response = "Неверный жанр, выберите жанр из списка выше.";
+                    }
+                    break;
+                default:
+                    response = "Неизвестная ошибка в процессе добавления книги.";
+                    userState.put(chatId, UserStates.DEFAULT);
+            }
+        }
+        return response;
+    }
+
+
+    /**
+     * Метод для обработки поиска книг по жанру.
+     *
+     * @param textMsg Входное текстовое сообщение от пользователя.
+     * @param chatId  Идентификатор чата.
+     * @return Сообщение-ответ на ввод пользователя.
+     */
+    private String handleSearchByGenre(String textMsg, long chatId) {
+        String response;
+
+        // Обрабатываем ввод в соответствии с текущим шагом
+        switch (bookInputSteps.get(chatId)) {
+            case GENRE:
+                String[] validGenres = {"Драма", "Приключения", "Фэнтези", "Научная Фантастика", "История", "Ужасы", "Детектив", "Сказка", "Романтика"};
+                String userGenre = textMsg.trim();
+
+                // Проверяем, что введенный жанр является допустимым
+                if (Arrays.asList(validGenres).contains(userGenre)) {
+                    // Выполняем поиск книг по жанру в базе данных
+                    ArrayList<String> foundBooks = storage.searchBooksByGenre(userGenre);
+
+                    if (!foundBooks.isEmpty()) {
+                        // Формируем ответ с найденными книгами
+                        StringBuilder bookList = new StringBuilder("Найденные книги по жанру '" + userGenre + "':\n");
+                        for (String book : foundBooks) {
+                            bookList.append("- ").append(book).append("\n");
+                        }
+                        response = bookList.toString();
+                        userState.put(chatId, UserStates.DEFAULT);
+                        bookInputSteps.remove(chatId);
+                    } else {
+                        response = "Книг по указанному жанру не найдено.";
+                        userState.put(chatId, UserStates.DEFAULT);
+                        // Сбрасываем состояние поиска по жанру для данного чата
+                        bookInputSteps.remove(chatId);
+                    }
+
+                } else {
+                    response = "Неверный жанр, выберите жанр из списка выше. Если вы уверены, что жанр верный, проверьте точное написание жанра, как в списке выше";
+                }
+                break;
+            default:
+                response = "Неизвестная ошибка в процессе поиска по жанру.";
+                userState.put(chatId, UserStates.DEFAULT);
+                // Сбрасываем состояние поиска по жанру для данного чата
+                bookInputSteps.remove(chatId);
+        }
+
+        return response;
+    }
+
+
+    /**
+     * Метод для обработки поиска книг по автору.
+     *
+     * @param textMsg Входное текстовое сообщение от пользователя.
+     * @param chatId  Идентификатор чата.
+     * @return Сообщение-ответ на ввод пользователя.
+     */
+    private String handleSearchByAuthor(String textMsg, long chatId) {
+        String response;
+
+        // Обрабатываем ввод в соответствии с текущим шагом
+        switch (bookInputSteps.get(chatId)) {
+            case AUTHOR:
+                // Выполняем поиск книг по автору в базе данных
+                ArrayList<String> foundBooks = storage.searchBooksByAuthor(textMsg.trim());
+
+                if (!foundBooks.isEmpty()) {
+                    // Формируем ответ с найденными книгами
+                    StringBuilder bookList = new StringBuilder("Найденные книги автора '" + textMsg.trim() + "':\n");
+                    for (String book : foundBooks) {
+                        bookList.append("- ").append(book).append("\n");
+                    }
+                    response = bookList.toString();
+                    userState.put(chatId, UserStates.DEFAULT);
+                } else {
+                    response = "Книг автора '" + textMsg.trim() + "' не найдено.";
+                    userState.put(chatId, UserStates.DEFAULT);
+                }
+
+                // Сбрасываем состояние поиска по автору для данного чата
+                bookInputSteps.remove(chatId);
+                break;
+            default:
+                response = "Неизвестная ошибка в процессе поиска по автору.";
+                userState.put(chatId, UserStates.DEFAULT);
+                // Сбрасываем состояние поиска по автору для данного чата
+                bookInputSteps.remove(chatId);
+        }
+
+        return response;
+    }
+
+
+    /**
+     * Метод для обработки удаления рекомендованных книг.
+     *
+     * @param textMsg Входное текстовое сообщение от пользователя.
+     * @param chatId  Идентификатор чата.
+     * @return Сообщение-ответ на ввод пользователя.
+     */
+    private String handleRemoveRecBook(String textMsg, long chatId) {
+        String response;
+        // Проверяем текущий шаг ввода для данного чата
+        BookInputStep currentStep = bookInputSteps.getOrDefault(chatId, BookInputStep.TITLE);
+        // Если пользователь отправляет произвольное сообщение, предполагаем, что это номер книги
+        if (currentStep == BookInputStep.TITLE) {
+            try {
+                int bookNumber = Integer.parseInt(textMsg.trim());
+                ArrayList<String> readBooks = storage.getAllRecValues();
+                ArrayList<String> anotherreadBooks = storage.getRecBooks();
+                if (bookNumber >= 1 && bookNumber <= readBooks.size()) {
+
+                    String[] oldBookParts = readBooks.get(bookNumber - 1).split("\n");
+                    String oldTitle = oldBookParts[0];
+                    String oldAuthor = oldBookParts[1];
+                    String oldGenre = oldBookParts[2];
+                    long chatid = Long.parseLong(oldBookParts[3]);
+
+                    String removedBook = anotherreadBooks.remove(bookNumber - 1); //  получаем ее данные книги
+                    storage.updateRecBooks(chatId, oldTitle,oldAuthor,oldGenre); // Обновляем список без удаленной книги
+
+                    if (chatId ==chatid) {
+                        userState.put(chatId, UserStates.DEFAULT);
+                        response = "Книга " + removedBook + " успешно удалена из списка!";
+
+                    }else{
+                        userState.put(chatId, UserStates.DEFAULT);
+                        response = "Вы не можете удалить книгу, которую добавляли не вы";
+                    }
+
+                } else {
+                    response = "Указанный уникальный номер книги не существует в списке книг.";
+                }
+            } catch (NumberFormatException e) {
+                response = "Некорректный формат номера книги.";
+            }
+            // Сбрасываем состояние для данного чата
+            bookInputSteps.remove(chatId);
+            bookData.remove(chatId);
+        } else {
+            response = "Неизвестная ошибка в процессе удаления книги.";
+            userState.put(chatId, UserStates.DEFAULT);
+        }
+
         return response;
     }
 
